@@ -1,3 +1,7 @@
+#[macro_use]
+extern crate serde_derive;
+extern crate serde_json;
+
 use std::process;
 use structopt::StructOpt;
 
@@ -6,6 +10,7 @@ const CONF_PATH: &str = ".helium-console-config.toml";
 
 mod client;
 mod config;
+mod types;
 
 #[derive(StructOpt, Debug)]
 enum DeviceCmd {
@@ -43,9 +48,7 @@ async fn run(cli: Cli, client: client::Client) -> Result {
         Cli::Device { cmd } => {
             match cmd {
                 DeviceCmd::List => {
-                    let response = client.get("api/cli/devices").await?;
-                    let body = response.text().await?;
-                    println!("{:?}", body);
+                    println!("{:#?}", client.get_devices().await?);
                 }
                 DeviceCmd::Get => {}
                 DeviceCmd::Post { name } => {
