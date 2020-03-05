@@ -31,7 +31,7 @@ matrix:
     rust: stable
     before_script:
       - rustup target add $TARGET
-    script: (cd helium-console-cli && cargo build --release --target $TARGET --locked)
+    script: cargo build --release --target $TARGET --locked
     addons:
       apt:
         packages:
@@ -43,7 +43,7 @@ matrix:
     env: MACOSX_DEPLOYMENT_TARGET=10.7 TARGET=x86_64-apple-darwin
     os: osx
     rust: stable
-    script: (cd helium-console-cli && cargo build --release --target $TARGET --locked)
+    script: cargo build --release --target $TARGET --locked
     install: true
     <<: *DEPLOY_TO_GITHUB
 
@@ -51,5 +51,5 @@ matrix:
     env: TARGET=x86_64-pc-windows-gnu EXE=.exe
     rust: stable
     before_script: rustup target add $TARGET
-    script: (cd helium-console-cli && cargo build --release --target $TARGET --locked)
+    script: cargo build --release --target $TARGET --locked
     <<: *DEPLOY_TO_GITHUB
