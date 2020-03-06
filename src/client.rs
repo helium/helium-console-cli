@@ -49,14 +49,13 @@ impl Client {
     }
 
 
-    pub async fn post_device(&self, new_device: NewDevice) -> Result<()> {
-        let request_body = format!("{{\"device\":{:}}}", serde_json::to_string(&new_device)?);
-        let request = self.post("api/ext/devices")?.json(&request_body);
-        println!("{:?}", request);
-        println!("{:?}", request_body);
-
+    pub async fn post_device(&self, new_device: NewDevice) -> Result<()> 
+        let new_device_request = NewDeviceRequest {
+            device: new_device,
+        };
+        let request = self.post("api/ext/devices")?.json(&new_device_request);
         let response = request.send().await?;
-        let response_body = response.text().await.unwrap();
+        let response_body = response.text().await?;
         println!("{:?}", response_body);
         Ok(())
     }

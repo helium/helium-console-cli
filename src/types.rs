@@ -31,6 +31,12 @@ pub struct NewDevice {
     name: String,
 }
 
+
+#[derive(Clone, Deserialize, Serialize, Debug)]
+pub struct NewDeviceRequest {
+    pub device: NewDevice
+}
+
 impl NewDevice {
     pub fn from_user_input(
         app_eui: String,
@@ -63,9 +69,6 @@ impl NewDevice {
         })
     }
 }
-
-
-
 
 use std::error::Error as stdError;
 use std::{fmt, str};
