@@ -17,7 +17,19 @@ use types::*;
 #[derive(StructOpt, Debug)]
 enum DeviceCmd {
     List,
-    Get,
+    Get {
+        app_eui: String,
+        app_key: String,
+        dev_eui: String,
+    },
+    Delete {
+        app_eui: String,
+        app_key: String,
+        dev_eui: String,
+    },
+    GetById {
+        id: String,
+    },
     Create {
         app_eui: String,
         app_key: String,
@@ -54,19 +66,36 @@ async fn run(cli: Cli, client: client::Client) -> Result {
     match cli {
         Cli::Device { cmd } => {
             match cmd {
-                DeviceCmd::List => {
-                    println!("{:#?}", client.get_devices().await?);
-                }
-                DeviceCmd::Get => {}
+                DeviceCmd::List => println!("{:#?}", client.get_devices().await?),
+                DeviceCmd::Get {
+                    app_eui,
+                    app_key,
+                    dev_eui,
+                } => {
+                    let request = GetDevice::from_user_input(app_eui, app_key, dev_eui)?;
+                    println!("{:#?}", client.get_device(request).await?)
+                },
+                DeviceCmd::GetById {
+                    id
+                } => (),
                 DeviceCmd::Create {
                     app_eui,
                     app_key,
                     dev_eui,
                     name,
                 } => {
-                    let new_device = NewDevice::from_user_input(app_eui, app_key, dev_eui, name)?;
+                    let new_device = NewDeviceRequest::from_user_input(app_eui, app_key, dev_eui, name)?;
                     client.post_device(new_device).await?;
                 }
+                DeviceCmd::Delete {
+                    app_eui,
+                    app_key,
+                    dev_eui,
+                } => {
+                    // let new_device = NewDeviceRequest::from_user_input(app_eui, app_key, dev_eui, name)?;
+                    // client.post_device(new_device).await?;
+                }
+
             }
             Ok(())
         }

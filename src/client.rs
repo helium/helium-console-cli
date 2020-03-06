@@ -40,6 +40,13 @@ impl Client {
             .header("key", self.key.as_str()))
     }
 
+    fn delete(&self, path: &str) -> Result<reqwest::RequestBuilder> {
+        Ok(self
+            .client
+            .delete(format!("{}/{}", self.base_url, path).as_str())
+            .header("key", self.key.as_str()))
+    }
+
     pub async fn get_devices(&self) -> Result<Vec<Device>> {
         let request = self.get("api/ext/devices")?;
         let response = request.send().await?;
@@ -48,8 +55,15 @@ impl Client {
         Ok(devices)
     }
 
-    pub async fn post_device(&self, new_device: NewDevice) -> Result<()> {
-        let new_device_request = NewDeviceRequest { device: new_device };
+    pub async fn get_device(&self, get_device: GetDevice) -> Result<Device> {
+        let request = self.get(format!("api/ext/devices/yolo?dev_eui={}&app_eui={}", get_device.dev_eui(), get_device.app_eui()).as_str())?;
+        let response = request.send().await?;
+        let body = response.text().await.unwrap();
+        let devices: Device = serde_json::from_str(&body)?;
+        Ok(devices)
+    }
+
+    pub async fn post_device(&self, new_device_request: NewDeviceRequest) -> Result<()> {
         let request = self.post("api/ext/devices")?.json(&new_device_request);
         let response = request.send().await?;
         let response_body = response.text().await?;
@@ -57,16 +71,3 @@ impl Client {
         Ok(())
     }
 }
-
-/*
-POST /api/cli/devices
-    Content-Type: application/json
-    {
-        "device": {
-            "name": "test",
-            "dev_eui": "0000000000000000",
-            "app_eui": "0000000000000000",
-            "app_key": "11111111111111111111111111111111"
-        }
-    }
-*/
