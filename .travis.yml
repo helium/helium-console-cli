@@ -51,5 +51,6 @@ matrix:
     env: TARGET=x86_64-pc-windows-gnu EXE=.exe
     rust: stable
     before_script: rustup target add $TARGET
-    script: cargo build --release --target $TARGET --locked
+    script: 
+      - RUSTFLAGS="-C linker=x86_64-w64-mingw32-gcc" cargo build --release --target $TARGET --locked
     <<: *DEPLOY_TO_GITHUB
