@@ -1,8 +1,8 @@
+use super::types::*;
 use super::Result;
 use reqwest::Client as ReqwestClient;
 use std::collections::HashMap;
 use std::time::Duration;
-use super::types::*;
 
 #[derive(Clone, Debug)]
 pub struct Client {
@@ -26,18 +26,51 @@ impl Client {
         })
     }
 
-    async fn get(&self, path: &str) -> Result<reqwest::Response> {
-        let request = self
+    fn get(&self, path: &str) -> Result<reqwest::RequestBuilder> {
+        Ok(self
             .client
             .get(format!("{}/{}", self.base_url, path).as_str())
-            .header("key", self.key.as_str());
-        Ok(request.send().await?)
+            .header("key", self.key.as_str()))
+    }
+
+    fn post(&self, path: &str) -> Result<reqwest::RequestBuilder> {
+        Ok(self
+            .client
+            .post(format!("{}/{}", self.base_url, path).as_str())
+            .header("key", self.key.as_str()))
     }
 
     pub async fn get_devices(&self) -> Result<Vec<Device>> {
-        let response: reqwest::Response = Self::get(self, "api/cli/devices").await?;
+        let request = self.get("api/ext/devices")?;
+        let response = request.send().await?;
         let body = response.text().await.unwrap();
         let devices: Vec<Device> = serde_json::from_str(&body)?;
         Ok(devices)
     }
+
+
+    pub async fn post_device(&self, new_device: NewDevice) -> Result<()> {
+        let request_body = format!("{{\"device\":{:}}}", serde_json::to_string(&new_device)?);
+        let request = self.post("api/ext/devices")?.json(&request_body);
+        println!("{:?}", request);
+        println!("{:?}", request_body);
+
+        let response = request.send().await?;
+        let response_body = response.text().await.unwrap();
+        println!("{:?}", response_body);
+        Ok(())
+    }
 }
+
+/*
+POST /api/cli/devices
+    Content-Type: application/json
+    {
+        "device": {
+            "name": "test",
+            "dev_eui": "0000000000000000",
+            "app_eui": "0000000000000000",
+            "app_key": "11111111111111111111111111111111"
+        }
+    }
+*/

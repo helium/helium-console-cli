@@ -12,11 +12,18 @@ mod client;
 mod config;
 mod types;
 
+use types::*;
+
 #[derive(StructOpt, Debug)]
 enum DeviceCmd {
     List,
     Get,
-    Post { name: String },
+    Create {
+        app_eui: String,
+        app_key: String,
+        dev_eui: String,
+        name: String,
+    },
 }
 
 /// Interact with Helium API via CLI
@@ -51,8 +58,14 @@ async fn run(cli: Cli, client: client::Client) -> Result {
                     println!("{:#?}", client.get_devices().await?);
                 }
                 DeviceCmd::Get => {}
-                DeviceCmd::Post { name } => {
-                    println!("{:?}", name);
+                DeviceCmd::Create {
+                    app_eui,
+                    app_key,
+                    dev_eui,
+                    name,
+                } => {
+                    let new_device = NewDevice::from_user_input(app_eui, app_key, dev_eui, name)?;
+                    client.post_device(new_device).await?;
                 }
             }
             Ok(())
