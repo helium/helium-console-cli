@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::fs::File;
 use std::io::{stdin, Write};
 use std::path::Path;
-
+use super::types::Error;
 use super::Result;
 
 const DEFAULT_BASE_URL: &str = "https://console.helium.com";
@@ -22,6 +22,14 @@ pub fn load(path: &str) -> Result<HashMap<String, String>> {
     if !Path::new(path).exists() {
         let mut file = File::create(path)?;
         let key = get_input("Enter API key\r\n");
+
+        // verify API key
+        let key_verify = base64::decode(&key)?;
+        if key_verify.len() != 32 {
+            println!("Invalid API key ipnut");
+            return Err(Error::InvalidApiKey.into())
+        }
+
         file.write_all(b"key = \"")?;
         file.write_all(key.as_bytes())?;
         file.write_all(b"\"\r\n")?;

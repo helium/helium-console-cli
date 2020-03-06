@@ -3,6 +3,7 @@ use super::Result;
 use reqwest::Client as ReqwestClient;
 use std::collections::HashMap;
 use std::time::Duration;
+use base64;
 
 #[derive(Clone, Debug)]
 pub struct Client {
@@ -19,6 +20,12 @@ impl Client {
             .timeout(Duration::from_secs(timeout))
             .build()?;
 
+        // verify API key
+        let key = base64::decode(&config["key"])?;
+        if key.len() != 32 {
+            println!("Invalid key in config file");
+            return Err(Error::InvalidApiKey.into())
+        }
         Ok(Client {
             base_url: config["base_url"].clone(),
             key: config["key"].clone(),
@@ -57,6 +64,14 @@ impl Client {
 
     pub async fn get_device(&self, get_device: GetDevice) -> Result<Device> {
         let request = self.get(format!("api/ext/devices/yolo?dev_eui={}&app_eui={}", get_device.dev_eui(), get_device.app_eui()).as_str())?;
+        let response = request.send().await?;
+        let body = response.text().await.unwrap();
+        let devices: Device = serde_json::from_str(&body)?;
+        Ok(devices)
+    }
+
+    pub async fn get_device_by_id(&self, id: String) -> Result<Device> {
+        let request = self.get(format!("api/ext/devices/{}", id).as_str())?;
         let response = request.send().await?;
         let body = response.text().await.unwrap();
         let devices: Device = serde_json::from_str(&body)?;

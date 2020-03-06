@@ -114,6 +114,7 @@ pub enum Error {
     InvalidAppEui,
     InvalidAppKey,
     InvalidDevEui,
+    InvalidApiKey
 }
 
 impl fmt::Display for Error {
@@ -127,7 +128,9 @@ impl fmt::Display for Error {
             }
             Error::InvalidDevEui => {
                 write!(f, "Invalid DevEui input. Must be 8 bytes represented in hex (\"0123456789ABCDEF\")")
-
+            }
+            Error::InvalidApiKey => {
+                write!(f, "Invalid Api Key. Must be 32 bytes represented in base64")
             }
         }
     }
@@ -139,6 +142,7 @@ impl stdError for Error {
             Error::InvalidAppEui => "Invalid AppEui input. Must be 8 bytes represented in hex (\"0123456789ABCDEF\")",
             Error::InvalidAppKey => "Invalid AppKey input. Must be 16 bytes represented in hex (\"0123456789ABCDEF0123456789ABCDEF\")",
             Error::InvalidDevEui => "Invalid DevEui input. Must be 8 bytes represented in hex (\"0123456789ABCDEF\")",
+            Error::InvalidApiKey => "Invalid Api Key. Must be 32 bytes represented in base64",
         }
     }
 
