@@ -48,11 +48,8 @@ impl Client {
         Ok(devices)
     }
 
-
-    pub async fn post_device(&self, new_device: NewDevice) -> Result<()> 
-        let new_device_request = NewDeviceRequest {
-            device: new_device,
-        };
+    pub async fn post_device(&self, new_device: NewDevice) -> Result<()> {
+        let new_device_request = NewDeviceRequest { device: new_device };
         let request = self.post("api/ext/devices")?.json(&new_device_request);
         let response = request.send().await?;
         let response_body = response.text().await?;

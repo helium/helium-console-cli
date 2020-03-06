@@ -31,10 +31,9 @@ pub struct NewDevice {
     name: String,
 }
 
-
 #[derive(Clone, Deserialize, Serialize, Debug)]
 pub struct NewDeviceRequest {
-    pub device: NewDevice
+    pub device: NewDevice,
 }
 
 impl NewDevice {
@@ -48,17 +47,17 @@ impl NewDevice {
 
         let app_eui_decoded = hex::decode(app_eui.clone())?;
         if app_eui_decoded.len() != 8 {
-            return Err(Error::InvalidAppEui.into())
+            return Err(Error::InvalidAppEui.into());
         }
 
         let app_key_decoded = hex::decode(app_key.clone())?;
         if app_key_decoded.len() != 16 {
-            return Err(Error::InvalidAppKey.into())
+            return Err(Error::InvalidAppKey.into());
         }
 
         let dev_eui_decoded = hex::decode(dev_eui.clone())?;
         if dev_eui_decoded.len() != 8 {
-            return Err(Error::InvalidDevEui.into())
+            return Err(Error::InvalidDevEui.into());
         }
 
         Ok(NewDevice {
