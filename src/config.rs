@@ -1,9 +1,9 @@
+use super::types::Error;
+use super::Result;
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::{stdin, Write};
 use std::path::Path;
-use super::types::Error;
-use super::Result;
 
 const DEFAULT_BASE_URL: &str = "https://console.helium.com";
 const DEFAULT_TIMEOUT: usize = 120;
@@ -27,7 +27,7 @@ pub fn load(path: &str) -> Result<HashMap<String, String>> {
         let key_verify = base64::decode(&key)?;
         if key_verify.len() != 32 {
             println!("Invalid API key ipnut");
-            return Err(Error::InvalidApiKey.into())
+            return Err(Error::InvalidApiKey.into());
         }
 
         file.write_all(b"key = \"")?;

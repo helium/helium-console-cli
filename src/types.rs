@@ -11,6 +11,12 @@ pub struct Device {
     oui: usize,
 }
 
+impl Device {
+    pub fn id(&self) -> &String {
+        &self.id
+    }
+}
+
 #[derive(Clone, Deserialize, Serialize, Debug)]
 pub struct GetDevice {
     app_eui: String,
@@ -18,12 +24,7 @@ pub struct GetDevice {
     dev_eui: String,
 }
 impl GetDevice {
-    pub fn from_user_input(
-        app_eui: String,
-        app_key: String,
-        dev_eui: String,
-    ) -> Result<GetDevice> {
-
+    pub fn from_user_input(app_eui: String, app_key: String, dev_eui: String) -> Result<GetDevice> {
         let app_eui_decoded = hex::decode(app_eui.clone())?;
         if app_eui_decoded.len() != 8 {
             return Err(Error::InvalidAppEui.into());
@@ -50,10 +51,6 @@ impl GetDevice {
         &self.app_eui
     }
 
-    pub fn app_key(&self) -> &String {
-        &self.app_key
-    }
-
     pub fn dev_eui(&self) -> &String {
         &self.dev_eui
     }
@@ -65,11 +62,11 @@ struct NewDevice {
     app_key: String,
     dev_eui: String,
     name: String,
- }
+}
 
 #[derive(Clone, Deserialize, Serialize, Debug)]
 pub struct NewDeviceRequest {
-    device: NewDevice
+    device: NewDevice,
 }
 
 impl NewDeviceRequest {
@@ -79,7 +76,6 @@ impl NewDeviceRequest {
         dev_eui: String,
         name: String,
     ) -> Result<NewDeviceRequest> {
-
         let app_eui_decoded = hex::decode(app_eui.clone())?;
         if app_eui_decoded.len() != 8 {
             return Err(Error::InvalidAppEui.into());
@@ -95,13 +91,13 @@ impl NewDeviceRequest {
             return Err(Error::InvalidDevEui.into());
         }
 
-        Ok(NewDeviceRequest { 
+        Ok(NewDeviceRequest {
             device: NewDevice {
                 app_eui,
                 app_key,
                 dev_eui,
                 name,
-            }
+            },
         })
     }
 }
@@ -114,7 +110,8 @@ pub enum Error {
     InvalidAppEui,
     InvalidAppKey,
     InvalidDevEui,
-    InvalidApiKey
+    InvalidApiKey,
+    InvalidUuid,
 }
 
 impl fmt::Display for Error {
@@ -132,6 +129,9 @@ impl fmt::Display for Error {
             Error::InvalidApiKey => {
                 write!(f, "Invalid Api Key. Must be 32 bytes represented in base64")
             }
+            Error::InvalidUuid => {
+                write!(f, "Invalid UUID input. Expected in hyphenated form \"00000000-0000-0000-0000-000000000000\"")
+            }
         }
     }
 }
@@ -143,6 +143,7 @@ impl stdError for Error {
             Error::InvalidAppKey => "Invalid AppKey input. Must be 16 bytes represented in hex (\"0123456789ABCDEF0123456789ABCDEF\")",
             Error::InvalidDevEui => "Invalid DevEui input. Must be 8 bytes represented in hex (\"0123456789ABCDEF\")",
             Error::InvalidApiKey => "Invalid Api Key. Must be 32 bytes represented in base64",
+            Error::InvalidUuid => "Invalid UUID input. Expected in hyphenated form \"00000000-0000-0000-0000-000000000000\"",
         }
     }
 

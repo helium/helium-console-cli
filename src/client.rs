@@ -1,9 +1,9 @@
 use super::types::*;
 use super::Result;
+use base64;
 use reqwest::Client as ReqwestClient;
 use std::collections::HashMap;
 use std::time::Duration;
-use base64;
 
 #[derive(Clone, Debug)]
 pub struct Client {
@@ -24,8 +24,9 @@ impl Client {
         let key = base64::decode(&config["key"])?;
         if key.len() != 32 {
             println!("Invalid key in config file");
-            return Err(Error::InvalidApiKey.into())
+            return Err(Error::InvalidApiKey.into());
         }
+
         Ok(Client {
             base_url: config["base_url"].clone(),
             key: config["key"].clone(),
@@ -63,26 +64,41 @@ impl Client {
     }
 
     pub async fn get_device(&self, get_device: GetDevice) -> Result<Device> {
-        let request = self.get(format!("api/ext/devices/yolo?dev_eui={}&app_eui={}", get_device.dev_eui(), get_device.app_eui()).as_str())?;
+        let request = self.get(
+            format!(
+                "api/ext/devices/yolo?dev_eui={}&app_eui={}",
+                get_device.dev_eui(),
+                get_device.app_eui()
+            )
+            .as_str(),
+        )?;
         let response = request.send().await?;
         let body = response.text().await.unwrap();
         let devices: Device = serde_json::from_str(&body)?;
         Ok(devices)
     }
 
-    pub async fn get_device_by_id(&self, id: String) -> Result<Device> {
+    pub async fn get_device_by_id(&self, id: &String) -> Result<Device> {
         let request = self.get(format!("api/ext/devices/{}", id).as_str())?;
         let response = request.send().await?;
         let body = response.text().await.unwrap();
-        let devices: Device = serde_json::from_str(&body)?;
-        Ok(devices)
+        let device: Device = serde_json::from_str(&body)?;
+        Ok(device)
     }
 
-    pub async fn post_device(&self, new_device_request: NewDeviceRequest) -> Result<()> {
+    pub async fn post_device(&self, new_device_request: NewDeviceRequest) -> Result<Device> {
         let request = self.post("api/ext/devices")?.json(&new_device_request);
         let response = request.send().await?;
-        let response_body = response.text().await?;
-        println!("{:?}", response_body);
+        let body = response.text().await?;
+        let device: Device = serde_json::from_str(&body)?;
+        Ok(device)
+    }
+
+    pub async fn delete_device(&self, id: &String) -> Result<()> {
+        let request = self.delete(format!("api/ext/devices/{}", id).as_str())?;
+        let response = request.send().await?;
+        let _response_body = response.text().await?;
+        println!("Delete successful");
         Ok(())
     }
 }
