@@ -77,7 +77,7 @@ or
 helium-console-cli device delete-by-id 03f5967a-7c79-42a2-bd5f-6e51015e73e3
 ```
 
-Finally, at any time, you may list all your device:
+Finally, at any time, you may list all your devices:
 
 ```
 helium-console-cli device list
