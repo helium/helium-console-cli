@@ -64,6 +64,7 @@ impl Client {
     }
 
     pub async fn get_device(&self, get_device: GetDevice) -> Result<Device> {
+        // TODO: API will change and app_key will also be used
         let request = self.get(
             format!(
                 "api/ext/devices/yolo?dev_eui={}&app_eui={}",
