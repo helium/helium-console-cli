@@ -7,7 +7,7 @@ Download a compiled release [here](https://github.com/helium/helium-console-cli/
 ## Usage
 
 ### Setup 
-First time you use the device, you will need to provide an API key. To create an account key, go to your [profile](https://console.helium.com/profile) on Helium Console. From the top right corner, click: Account->Profile.
+First time you use the CLI, you will need to provide an API key. To create an account key, go to your [profile](https://console.helium.com/profile) on Helium Console. From the top right corner, click: Account->Profile.
 
 From there, you may generate a key with a specific name and role. The key will only display once.
 
