@@ -1,8 +1,8 @@
 use super::types::*;
+use super::Config;
 use super::Result;
 use base64;
 use reqwest::Client as ReqwestClient;
-use std::collections::HashMap;
 use std::time::Duration;
 
 #[derive(Clone, Debug)]
@@ -14,22 +14,22 @@ pub struct Client {
 
 impl Client {
     /// Create client from configuration HashMap
-    pub fn new(config: HashMap<String, String>) -> Result<Client> {
-        let timeout = config["request_timeout"].parse::<u64>()?;
+    pub fn new(config: Config) -> Result<Client> {
+        let timeout = config.request_timeout;
         let client = ReqwestClient::builder()
             .timeout(Duration::from_secs(timeout))
             .build()?;
 
         // verify API key
-        let key = base64::decode(&config["key"])?;
+        let key = base64::decode(&config.key)?;
         if key.len() != 32 {
             println!("Invalid key in config file");
             return Err(Error::InvalidApiKey.into());
         }
 
         Ok(Client {
-            base_url: config["base_url"].clone(),
-            key: config["key"].clone(),
+            base_url: config.base_url.clone(),
+            key: config.key.clone(),
             client,
         })
     }

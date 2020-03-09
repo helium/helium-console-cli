@@ -33,14 +33,10 @@ enum DeviceCmd {
     },
     /// Get the full record of your device
     /// by the UUID
-    GetById {
-        id: String,
-    },
+    GetById { id: String },
     /// Delete a device
     /// by the UUID
-    DeleteById {
-        id: String,
-    },
+    DeleteById { id: String },
     /// Create a device
     /// by providing app_eui, app_key, dev_eui and name
     Create {
@@ -59,6 +55,13 @@ enum Cli {
         #[structopt(subcommand)]
         cmd: DeviceCmd,
     },
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct Config {
+    key: String,
+    base_url: String,
+    request_timeout: u64,
 }
 
 #[tokio::main]
