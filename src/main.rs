@@ -125,7 +125,7 @@ async fn run(cli: Cli, client: client::Client) -> Result {
         }
         Ttn => {
             let client =  ttn::Client::new()?;
-            client.get_applications().await?;
+            //client.get_applications().await?;
             Ok(())
         }
     }

@@ -10,6 +10,7 @@ use oauth2::{
     ClientId,
     ClientSecret,
     CsrfToken,
+PkceCodeChallengeS256,
     RedirectUrl,
     Scope,
     TokenResponse,
@@ -19,29 +20,36 @@ use oauth2::basic::BasicClient;
 use url::Url;
 use super::Result;
 
+use oauth2::http_client;
 
-struct Client;
+pub struct Client;
 
 impl Client {
-    pub fn new(){
+    pub fn new() -> Result<()>{
         // Create an OAuth2 client by specifying the client ID, client secret, authorization URL and
         // token URL.
         let client =
             BasicClient::new(
-                ClientId::new("client_id".to_string()),
-                Some(ClientSecret::new("client_secret".to_string())),
-                AuthUrl::new(Url::parse("http://authorize")?),
-                Some(TokenUrl::new(Url::parse("http://token")?))
+                ClientId::new("ttnctl".to_string()),
+                Some(ClientSecret::new("ttnctl".to_string())),
+                AuthUrl::new(Url::parse("https://account.thethingsnetwork.org")?),
+                None
             )
                 // Set the desired scopes.
-                .add_scope(Scope::new("read".to_string()))
-                .add_scope(Scope::new("write".to_string()))
+                .add_scope(Scope::new("read".to_string()));
 
-                // Set the URL the user will be redirected to after the authorization process.
-                .set_redirect_url(RedirectUrl::new(Url::parse("http://redirect")?));
+        // Generate a PKCE challenge.
+        let (pkce_challenge, pkce_verifier) = PkceCodeChallengeS256::new_random_sha256();
 
         // Generate the full authorization URL.
-        let (auth_url, csrf_token) = client.authorize_url(CsrfToken::new_random);
+        let (auth_url, csrf_token) = client
+            .authorize_url(CsrfToken::new_random)
+            // Set the desired scopes.
+            .add_scope(Scope::new("read".to_string()))
+            .add_scope(Scope::new("write".to_string()))
+            // Set the PKCE code challenge.
+            .set_pkce_challenge(pkce_challenge)
+            .url();
 
         // This is the URL you should redirect the user to, in order to trigger the authorization
         // process.
@@ -53,8 +61,12 @@ impl Client {
 
         // Now you can trade it for an access token.
         let token_result =
-            client.exchange_code(AuthorizationCode::new("some authorization code".to_string()));
-    }
+            client
+                .exchange_code(AuthorizationCode::new("some authorization code".to_string()))
+                // Set the PKCE code verifier.
+                .set_pkce_verifier(pkce_verifier)
+                .request(http_client)?;
+            }
 }
 
 
