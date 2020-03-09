@@ -1,7 +1,13 @@
+<<<<<<< HEAD
+=======
+use super::types::*;
+use super::Config;
+>>>>>>> lthiery/ttn
 use super::Result;
 use base64;
 use reqwest::Client as ReqwestClient;
 use std::time::Duration;
+<<<<<<< HEAD
 use super::config::get_input;
 
 const BASE_URL: &str = "https://account.thethingsnetwork.org/api/v2";
@@ -12,7 +18,6 @@ pub struct Client {
     key: String,
     client: ReqwestClient,
 }
-
 
 impl Client {
     pub fn new() -> Result<Client> {
@@ -50,3 +55,5 @@ impl Client {
         Ok(())
     }
 }
+=======
+>>>>>>> lthiery/ttn
