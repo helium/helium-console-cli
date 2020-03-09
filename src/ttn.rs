@@ -10,7 +10,6 @@ use oauth2::{
     ClientId,
     ClientSecret,
     CsrfToken,
-PkceCodeChallengeS256,
     RedirectUrl,
     Scope,
     TokenResponse,
@@ -19,9 +18,6 @@ PkceCodeChallengeS256,
 use oauth2::basic::BasicClient;
 use url::Url;
 use super::Result;
-
-use oauth2::http_client;
-
 pub struct Client;
 
 impl Client {
@@ -32,41 +28,22 @@ impl Client {
             BasicClient::new(
                 ClientId::new("ttnctl".to_string()),
                 Some(ClientSecret::new("ttnctl".to_string())),
-                AuthUrl::new(Url::parse("https://account.thethingsnetwork.org")?),
-                None
-            )
-                // Set the desired scopes.
-                .add_scope(Scope::new("read".to_string()));
+                AuthUrl::new(Url::parse("https://account.thethingsnetwork.org/api/v2/applications/token")?),
+                Some(TokenUrl::new(Url::parse("https://account.thethingsnetwork.org/api/v2/applications/token")?)),
+            );
+        // Generate the authorization URL to which we'll redirect the user.
+        let (authorize_url, csrf_state) = client.authorize_url(CsrfToken::new_random);
+        
+        let code = AuthorizationCode::new("JGksMQMgTI_RtVHmYA-NMZbpAEnH7FM4Afudn37E624".to_string());;
 
-        // Generate a PKCE challenge.
-        let (pkce_challenge, pkce_verifier) = PkceCodeChallengeS256::new_random_sha256();
 
-        // Generate the full authorization URL.
-        let (auth_url, csrf_token) = client
-            .authorize_url(CsrfToken::new_random)
-            // Set the desired scopes.
-            .add_scope(Scope::new("read".to_string()))
-            .add_scope(Scope::new("write".to_string()))
-            // Set the PKCE code challenge.
-            .set_pkce_challenge(pkce_challenge)
-            .url();
+        // Exchange the code with a token.
+        let token_res = client.exchange_code(code);
 
-        // This is the URL you should redirect the user to, in order to trigger the authorization
-        // process.
-        println!("Browse to: {}", auth_url);
+        println!("TTN returned the following token:\n{:?}\n", token_res);
 
-        // Once the user has been redirected to the redirect URL, you'll have access to the
-        // authorization code. For security reasons, your code should verify that the `state`
-        // parameter returned by the server matches `csrf_state`.
-
-        // Now you can trade it for an access token.
-        let token_result =
-            client
-                .exchange_code(AuthorizationCode::new("some authorization code".to_string()))
-                // Set the PKCE code verifier.
-                .set_pkce_verifier(pkce_verifier)
-                .request(http_client)?;
-            }
+        Ok(())
+    }
 }
 
 
