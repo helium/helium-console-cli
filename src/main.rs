@@ -10,6 +10,7 @@ const CONF_PATH: &str = ".helium-console-config.toml";
 mod client;
 mod config;
 mod types;
+mod ttn;
 
 use types::*;
 
@@ -55,6 +56,7 @@ enum Cli {
         #[structopt(subcommand)]
         cmd: DeviceCmd,
     },
+    Ttn,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -119,6 +121,11 @@ async fn run(cli: Cli, client: client::Client) -> Result {
                     client.delete_device(&id).await?;
                 }
             }
+            Ok(())
+        }
+        Ttn => {
+            let client =  ttn::Client::new()?;
+            client.get_applications().await?;
             Ok(())
         }
     }

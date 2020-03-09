@@ -9,7 +9,7 @@ use toml;
 const DEFAULT_BASE_URL: &str = "https://console.helium.com";
 const DEFAULT_TIMEOUT: u64 = 120;
 
-fn get_input(prompt: &str) -> String {
+pub fn get_input(prompt: &str) -> String {
     print!("{}", prompt);
     let mut input = String::new();
     match stdin().read_line(&mut input) {
