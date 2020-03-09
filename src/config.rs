@@ -1,12 +1,13 @@
 use super::types::Error;
+use super::Config;
 use super::Result;
-use std::collections::HashMap;
-use std::fs::File;
+use std::fs;
 use std::io::{stdin, Write};
 use std::path::Path;
+use toml;
 
 const DEFAULT_BASE_URL: &str = "https://console.helium.com";
-const DEFAULT_TIMEOUT: usize = 120;
+const DEFAULT_TIMEOUT: u64 = 120;
 
 fn get_input(prompt: &str) -> String {
     print!("{}", prompt);
@@ -18,9 +19,9 @@ fn get_input(prompt: &str) -> String {
     input.trim().to_string()
 }
 
-pub fn load(path: &str) -> Result<HashMap<String, String>> {
+pub fn load(path: &str) -> Result<Config> {
     if !Path::new(path).exists() {
-        let mut file = File::create(path)?;
+        let mut file = fs::File::create(path)?;
         let key = get_input("Enter API key\r\n");
 
         // verify API key
@@ -30,18 +31,16 @@ pub fn load(path: &str) -> Result<HashMap<String, String>> {
             return Err(Error::InvalidApiKey.into());
         }
 
-        file.write_all(b"key = \"")?;
-        file.write_all(key.as_bytes())?;
-        file.write_all(b"\"\r\n")?;
-        file.write_all(b"base_url = \"")?;
-        file.write_all(DEFAULT_BASE_URL.as_bytes())?;
-        file.write_all(b"\"\r\n")?;
-        file.write_all(b"request_timeout = \"")?;
-        file.write_all(DEFAULT_TIMEOUT.to_string().as_bytes())?;
-        file.write_all(b"\"\r\n")?;
+        let config = Config {
+            key,
+            base_url: DEFAULT_BASE_URL.to_string(),
+            request_timeout: DEFAULT_TIMEOUT,
+        };
+
+        file.write_all(&toml::to_string(&config)?.as_bytes())?;
     }
 
-    let mut load_config = config::Config::default();
-    load_config.merge(config::File::with_name(path))?;
-    Ok(load_config.try_into::<HashMap<String, String>>()?)
+    let contents = fs::read_to_string(path)?;
+    let config: Config = toml::from_str(&contents)?;
+    Ok(config)
 }
