@@ -18,7 +18,7 @@ use url::Url;
 
 const ACCOUNT_BASE_URL: &str = "https://account.thethingsnetwork.org";
 
-const APP_BASE_URL: &str = "http://us-west.thethings.network:8084";
+const APP_BASE_URL: &str = "https://discovery.thethingsnetwork.org";
 
 const DEFAULT_TIMEOUT: u64 = 120;
 pub struct Client {
@@ -88,15 +88,13 @@ impl Client {
     fn post_with_key(&self, path: &str, key: &str) -> Result<reqwest::RequestBuilder> {
         Ok(self
             .client
-            .post(format!("{}{}", ACCOUNT_BASE_URL, path).as_str())
-            .header("key", key))
+            .post(format!("{}{}", ACCOUNT_BASE_URL, path).as_str()))
     }
 
     fn get_with_key(&self, path: &str, key: &str) -> Result<reqwest::RequestBuilder> {
         Ok(self
             .client
             .get(format!("{}{}", APP_BASE_URL, path).as_str())
-            .bearer_auth(self.token.secret())
             .header("key", key))
     }
 
@@ -115,6 +113,8 @@ impl Client {
             password: app.get_default_key()?.to_string(),
             grant_type: "password".to_string(),
         };
+
+        println!("TokenRequest {:?}", token_request);
 
         let request = self
             .post_with_key("/api/v2/applications/token", app.get_default_key()?)?

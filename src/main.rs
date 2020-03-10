@@ -130,7 +130,7 @@ async fn run(cli: Cli) -> Result {
             println!("{:?}", apps);
             for app in apps {
                 println!("printing devices for {:?}", app);
-                let apps = client.get_app_token(app).await?;
+                let apps = client.get_devices(app).await?;
             }
             Ok(())
         }
