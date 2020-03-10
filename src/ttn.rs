@@ -10,49 +10,142 @@ use oauth2::{
     ClientId,
     ClientSecret,
     CsrfToken,
-    RedirectUrl,
-    Scope,
     TokenResponse,
-    TokenUrl
+    TokenUrl,
+    AccessToken,
+    Scope
 };
 use oauth2::basic::BasicClient;
 use url::Url;
 use super::Result;
-pub struct Client;
+use super::config::get_input;
+use reqwest::Client as ReqwestClient;
+use std::time::Duration;
+//use hyper::header::{Headers, Authorization, Bearer};
+
+const AUTH_BASE_URL: &str = "https://account.thethingsnetwork.org";
+const BASE_URL: &str = "https://account.thethingsnetwork.org/api/v2";
+
+
+const SCRAPE_DEVICES: &str = "http:us-west.thethings.network:8084";
+const DEFAULT_TIMEOUT: u64 = 120;
+pub struct Client {
+    token: AccessToken,
+    client: ReqwestClient
+}
+
+
+/*
+HTTP: http://<region>.thethings.network:8084
+Replace <region> with the last part of the handler you registered your application to, e.g. eu, us-west, asia-se or brazil.
+*/
+
+use serde::{Serialize, Deserialize};
+
+#[derive(Serialize, Deserialize, Debug)]
+struct Point {
+    x: i32,
+    y: i32,
+}
 
 impl Client {
-    pub fn new() -> Result<()>{
+    pub fn new() -> Result<Client>{
         // Create an OAuth2 client by specifying the client ID, client secret, authorization URL and
         // token URL.
         let client =
             BasicClient::new(
                 ClientId::new("ttnctl".to_string()),
                 Some(ClientSecret::new("ttnctl".to_string())),
-                AuthUrl::new(Url::parse("https://account.thethingsnetwork.org/api/v2/applications/token")?),
-                Some(TokenUrl::new(Url::parse("https://account.thethingsnetwork.org/api/v2/applications/token")?)),
+                AuthUrl::new(Url::parse(format!("{}/users/authorize", AUTH_BASE_URL).as_str())?),
+                Some(TokenUrl::new(Url::parse(format!("{}/users/token", AUTH_BASE_URL).as_str())?)),
             );
-        // Generate the authorization URL to which we'll redirect the user.
-        let (authorize_url, csrf_state) = client.authorize_url(CsrfToken::new_random);
-        
-        let code = AuthorizationCode::new("JGksMQMgTI_RtVHmYA-NMZbpAEnH7FM4Afudn37E624".to_string());;
 
+        let access_code = get_input("Provide ttnctl access code\r\n");
+
+        let code = AuthorizationCode::new(access_code.to_string());
 
         // Exchange the code with a token.
-        let token_res = client.exchange_code(code);
+        let token_res = client.exchange_code(code).unwrap();
+        println!("{:?}", token_res);
 
-        println!("TTN returned the following token:\n{:?}\n", token_res);
+        println!("{:?}", token_res.access_token().clone().secret());
+        Ok(Client {
+            token: token_res.access_token().clone(),
+            client: ReqwestClient::builder()
+            .timeout(Duration::from_secs(DEFAULT_TIMEOUT))
+            .build()?
+        })
+    }
 
+    fn get(&self, path: &str) -> Result<reqwest::RequestBuilder> {
+
+        Ok(self
+            .client
+            .get(format!("{}/{}", BASE_URL, path).as_str())
+            .bearer_auth(self.token.secret())
+            )
+    }
+
+    fn get2(&self, path: &str) -> Result<reqwest::RequestBuilder> {
+
+        Ok(self
+            .client
+            .get(format!("{}/{}", SCRAPE_DEVICES, path).as_str())
+            //.bearer_auth(self.token.secret())
+            )
+    }
+
+    pub async fn get_applications(&self) -> Result<Vec<App>> {
+        let request = self.get(
+            format!(
+                "applications",
+            )
+            .as_str(),
+        )?;
+        let response = request.send().await?;
+        let body = response.text().await.unwrap();
+        println!("{:?}", body);
+        let apps: Vec<App> = serde_json::from_str(&body)?;
+        Ok(apps)
+    }
+
+    pub async fn get_devices(&self, app: App) -> Result<()> {
+        let request = self.get2(
+            format!(
+                "applications/{}/devices",
+                app.id,
+            )
+            .as_str(),
+        )?;
+        println!("{:?}", request);
+        let response = request.send().await?;
+        let body = response.text().await.unwrap();
+        println!("{:?}", body);
+        //let apps: Vec<App> = serde_json::from_str(&body)?;
         Ok(())
     }
 }
 
+#[derive(Clone, Deserialize, Serialize, Debug)]
+pub struct App {
+    id: String,
+    euis: Vec<String>,
+    name: String,
+}
+
+// "[\n\n
+// {\"id\":\"soilsensor929\",
+// \"name\":\"Soil Sensor\",
+// \"euis\":[\"70B3D57ED002C177\"],
+// \"created\":\"2020-03-09T17:01:30.086Z\",
+// \"rights\":
+// [\"settings\",\"delete\",\"collaborators\",\"devices\"],
+// \"collaborators\":[{\"username\":\"lthiery929\",\"email\":\"thiery.louis@gmail.com\",\"rights\":[\"settings\",\"delete\",\"collaborators\",\"devices\"]}],\"access_keys\":[{\"name\":\"default key\",\"key\":\"ttn-account-v2.O5zL2lQ76Fq7coQb_BzYvoCJffTJ3RlKtxrDACI_mRM\",\"_id\":\"5e66766aa03b3d003b67cb37\",\"rights\":[\"messages:up:r\",\"messages:down:w\",\"devices\"]}]}\n]\n"
 
 
 /*
 use base64;
 use reqwest::Client as ReqwestClient;
-use std::time::Duration;
-use super::config::get_input;
 
 const BASE_URL: &str = "https://account.thethingsnetwork.org/api/v2";
 const DEFAULT_TIMEOUT: u64 = 120;
@@ -65,7 +158,7 @@ pub struct Client {
 
 impl Client {
     pub fn new() -> Result<Client> {
-        let key = "nAeam3v-jLSX22sSFqNubVFuSTs6Cfy4eC2aVeDWvR4".to_string();//get_input("Provide ttnctl access code");
+        let key = "nAeam3v-jLSX22sSFqNubVFuSTs6Cfy4eC2aVeDWvR4".to_string();//
         let client = ReqwestClient::builder()
             .timeout(Duration::from_secs(DEFAULT_TIMEOUT))
             .build()?;
@@ -76,28 +169,7 @@ impl Client {
         })
     }
 
-    fn get(&self, path: &str) -> Result<reqwest::RequestBuilder> {
-        Ok(self
-            .client
-            .get(format!("{}/{}", BASE_URL, path).as_str())
-            .header("key", self.key.as_str()))
-    }
 
-    pub async fn get_applications(&self) -> Result<()> {
-        let request = self.get(
-            format!(
-                "applications",
-            )
-            .as_str(),
-        )?;
-        let response = request.send().await?;
-        println!("{:?}", response);
-
-        let body = response.text().await.unwrap();
-        println!("{:?}", body);
-
-        Ok(())
-    }
 }
 */
 

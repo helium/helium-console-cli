@@ -123,9 +123,14 @@ async fn run(cli: Cli, client: client::Client) -> Result {
             }
             Ok(())
         }
-        Ttn => {
+        Cli::Ttn => {
             let client =  ttn::Client::new()?;
-            //client.get_applications().await?;
+            let apps = client.get_applications().await?;
+            println!("{:?}", apps);
+            for app in apps {
+                println!("printing devices for {:?}", app);
+                let apps = client.get_devices(app).await?;
+            }
             Ok(())
         }
     }
