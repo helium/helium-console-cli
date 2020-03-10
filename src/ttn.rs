@@ -8,8 +8,7 @@ use super::Result;
 use oauth2::basic::BasicClient;
 use oauth2::prelude::*;
 use oauth2::{
-    AccessToken, AuthUrl, AuthorizationCode, ClientId, ClientSecret,
-    TokenResponse, TokenUrl,
+    AccessToken, AuthUrl, AuthorizationCode, ClientId, ClientSecret, TokenResponse, TokenUrl,
 };
 use reqwest::Client as ReqwestClient;
 use std::time::Duration;
@@ -84,22 +83,19 @@ impl Client {
     }
 
     pub async fn get_app_token(&mut self, apps: Vec<App>) -> Result<String> {
-        let mut token_request = RequestToken {
-            scope: Vec::new()
-        };
+        let mut token_request = RequestToken { scope: Vec::new() };
 
         for app in apps {
             token_request.scope.push(format!("apps:{}", app.id));
         }
 
         let request = if let Some(token) = self.token.take() {
-            self
-            .client
-            .post(format!("{}{}", ACCOUNT_BASE_URL, "/users/restrict-token").as_str())
-            .bearer_auth(token.secret())
-            .json(&token_request)
+            self.client
+                .post(format!("{}{}", ACCOUNT_BASE_URL, "/users/restrict-token").as_str())
+                .bearer_auth(token.secret())
+                .json(&token_request)
         } else {
-            return Err(Error::NoToken.into())
+            return Err(Error::NoToken.into());
         };
         let response = request.send().await?;
         let body = response.text().await.unwrap();
@@ -111,7 +107,7 @@ impl Client {
         for url in &APP_BASE_URL {
             let request = self
                 .client
-                .get(format!("{}/applications/{}/devices", url, app.id ).as_str())
+                .get(format!("{}/applications/{}/devices", url, app.id).as_str())
                 .bearer_auth(token);
             let response = request.send().await?;
             if response.status() == 200 {
@@ -122,7 +118,7 @@ impl Client {
                 for device in devices.devices {
                     ret.push(device.lorawan_device)
                 }
-                return Ok(ret)
+                return Ok(ret);
             }
         }
         Err(Error::NoHandler.into())
@@ -146,23 +142,23 @@ struct Key {
 
 #[derive(Clone, Deserialize, Serialize, Debug)]
 struct RequestToken {
-  scope: Vec<String>
+    scope: Vec<String>,
 }
 #[derive(Clone, Deserialize, Serialize, Debug)]
 struct RequestTokenResponse {
-  access_token: String
+    access_token: String,
 }
 
 #[derive(Clone, Deserialize, Serialize, Debug)]
 struct Devices {
-    devices: Vec<TtnDevice>
+    devices: Vec<TtnDevice>,
 }
 
 #[derive(Clone, Deserialize, Serialize, Debug)]
 struct TtnDevice {
     app_id: String,
     dev_id: String,
-    lorawan_device: Device
+    lorawan_device: Device,
 }
 
 #[derive(Clone, Deserialize, Serialize, Debug)]
@@ -191,12 +187,8 @@ pub enum Error {
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Error::NoToken => {
-                write!(f, "Client has no token or it has been consumed")
-            }
-            Error::NoHandler => {
-                write!(f, "No handler servers are associated with App")
-            }
+            Error::NoToken => write!(f, "Client has no token or it has been consumed"),
+            Error::NoHandler => write!(f, "No handler servers are associated with App"),
         }
     }
 }
@@ -206,7 +198,6 @@ impl stdError for Error {
         match self {
             Error::NoToken => "Client has no token or it has been consumed",
             Error::NoHandler => "No handler servers are associated with App",
-
         }
     }
 

@@ -1,10 +1,12 @@
-#[macro_use] extern crate serde_derive;
+#[macro_use]
+extern crate serde_derive;
 extern crate serde_json;
-#[macro_use] extern crate prettytable;
+#[macro_use]
+extern crate prettytable;
 
+use prettytable::Table;
 use std::process;
 use structopt::StructOpt;
-use prettytable::Table;
 
 pub type Result<T = ()> = std::result::Result<T, Box<dyn std::error::Error>>;
 const CONF_PATH: &str = ".helium-console-config.toml";
@@ -14,9 +16,9 @@ mod config;
 mod ttn;
 mod types;
 
-use types::*;
 use config::get_input;
 use std::str::FromStr;
+use types::*;
 
 #[derive(StructOpt, Debug)]
 enum DeviceCmd {
@@ -131,15 +133,11 @@ async fn run(cli: Cli) -> Result {
             println!("TTN Import");
             let mut client = ttn::Client::new()?;
             let apps = client.get_applications().await?;
-            
+
             let mut table = Table::new();
             table.add_row(row!["Index", "Name", "ID"]);
-            for (index,app) in apps.iter().enumerate() {
-                table.add_row(row![
-                    index + 1,
-                    app.name,
-                    app.id,
-                ]);
+            for (index, app) in apps.iter().enumerate() {
+                table.add_row(row![index + 1, app.name, app.id,]);
             }
 
             table.printstd();
@@ -153,6 +151,13 @@ async fn run(cli: Cli) -> Result {
                 Ok(())
             } else {
                 if index == 0 {
+                    // You can restrict the OAuth2 token into having access to
+                    // 10 items or less. So if we want to support more than 10
+                    // applications imported at a time, we will need to ask
+                    // the user for a new token
+                    if apps.len() > 10 {
+                        panic!("Due to TTN Auth limitations, importing more than 10 apps at once not currently supported");
+                    }
                     let token = client.get_app_token(apps.clone()).await?;
                     for app in &apps {
                         client.get_devices(&app, &token).await?;
@@ -162,7 +167,7 @@ async fn run(cli: Cli) -> Result {
                         }
                     }
                 } else {
-                    let app = apps[index-1].clone();
+                    let app = apps[index - 1].clone();
                     let token = client.get_app_token(vec![app.clone()]).await?;
                     client.get_devices(&app, &token).await?;
                     let devices = client.get_devices(&app, &token).await?;
@@ -173,7 +178,6 @@ async fn run(cli: Cli) -> Result {
 
                 Ok(())
             }
-
         }
     }
 }
@@ -186,4 +190,3 @@ fn validate_uuid_input(id: &String) -> Result {
     }
     Ok(())
 }
-
