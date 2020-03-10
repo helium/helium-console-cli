@@ -6,6 +6,10 @@ Download a compiled release [here](https://github.com/helium/helium-console-cli/
 
 ## Usage
 
+### Windows
+
+On Windows, the CLI requires [mingw](http://www.mingw.org/wiki/Install_MinGW) at the moment. Do a default installation for the necessary dependencies.
+
 ### Setup 
 First time you use the CLI, you will need to provide an API key. To create an account key, go to your [profile](https://console.helium.com/profile) on Helium Console. From the top right corner, click: Account->Profile.
 
