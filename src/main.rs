@@ -1,9 +1,11 @@
-#[macro_use]
-extern crate serde_derive;
+#[macro_use] extern crate serde_derive;
 extern crate serde_json;
+#[macro_use] extern crate prettytable;
 
 use std::process;
 use structopt::StructOpt;
+use prettytable::Table;
+
 pub type Result<T = ()> = std::result::Result<T, Box<dyn std::error::Error>>;
 const CONF_PATH: &str = ".helium-console-config.toml";
 
@@ -13,6 +15,8 @@ mod ttn;
 mod types;
 
 use types::*;
+use config::get_input;
+use std::str::FromStr;
 
 #[derive(StructOpt, Debug)]
 enum DeviceCmd {
@@ -127,12 +131,40 @@ async fn run(cli: Cli) -> Result {
             println!("TTN Import");
             let client = ttn::Client::new()?;
             let apps = client.get_applications().await?;
-            println!("{:?}", apps);
-            for app in apps {
-                println!("printing devices for {:?}", app);
-                let apps = client.get_devices(app).await?;
+            
+            let mut table = Table::new();
+            table.add_row(row!["Index", "Name", "ID"]);
+            for (index,app) in apps.iter().enumerate() {
+                table.add_row(row![
+                    index + 1,
+                    app.name,
+                    app.id,
+                ]);
             }
-            Ok(())
+
+            table.printstd();
+
+            let index_input = get_input("Import which application? Type 0 for ALL");
+
+            let index = usize::from_str(&index_input)?;
+
+            if index > apps.len() {
+                println!("There is no app with index {}", index);
+                Ok(())
+            } else {
+                if index == 0 {
+                    for app in apps {
+                        let token = client.get_app_token(&app).await?;
+                        let devices = client.get_devices(&app, &token).await?;
+                        for device in devices {
+                            println!("{:?}", device);
+                        }
+                    }
+                }
+
+                Ok(())
+            }
+
         }
     }
 }
@@ -145,3 +177,4 @@ fn validate_uuid_input(id: &String) -> Result {
     }
     Ok(())
 }
+

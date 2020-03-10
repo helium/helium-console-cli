@@ -8,36 +8,26 @@ use super::Result;
 use oauth2::basic::BasicClient;
 use oauth2::prelude::*;
 use oauth2::{
-    AccessToken, AuthUrl, AuthorizationCode, ClientId, ClientSecret, CsrfToken, Scope,
+    AccessToken, AuthUrl, AuthorizationCode, ClientId, ClientSecret,
     TokenResponse, TokenUrl,
 };
 use reqwest::Client as ReqwestClient;
 use std::time::Duration;
 use url::Url;
+
 //use hyper::header::{Headers, Authorization, Bearer};
 
 const ACCOUNT_BASE_URL: &str = "https://account.thethingsnetwork.org";
 
-const APP_BASE_URL: &str = "https://discovery.thethingsnetwork.org";
+const APP_BASE_URL: &str = "http://us-west.thethings.network:8084";
 
 const DEFAULT_TIMEOUT: u64 = 120;
+
 pub struct Client {
-    token: AccessToken,
+    token: Option<AccessToken>,
     client: ReqwestClient,
 }
 
-/*
-HTTP: http://<region>.thethings.network:8084
-Replace <region> with the last part of the handler you registered your application to, e.g. eu, us-west, asia-se or brazil.
-*/
-
-use serde::{Deserialize, Serialize};
-
-#[derive(Serialize, Deserialize, Debug)]
-struct Point {
-    x: i32,
-    y: i32,
-}
 impl Client {
     pub fn new() -> Result<Client> {
         // Create an OAuth2 client by specifying the client ID, client secret, authorization URL and
@@ -51,20 +41,17 @@ impl Client {
             Some(TokenUrl::new(Url::parse(
                 format!("{}/users/token", ACCOUNT_BASE_URL).as_str(),
             )?)),
-        )
-        .add_scope(Scope::new("apps:soilsensor929".to_string()));
-
-        let access_code = get_input("Provide ttnctl access code\r\n");
+        );
+        let access_code = get_input("Provide ttnctl access code");
         //println!("Creating exchan")
         let code = AuthorizationCode::new(access_code.to_string());
 
         // Exchange the code with a token.
         let token_res = client.exchange_code(code).unwrap();
-        println!("Token response {:?}", token_res);
 
         //println!("{:?}", token_res.access_token().clone().secret());
         Ok(Client {
-            token: token_res.access_token().clone(),
+            token: Some(token_res.access_token().clone()),
             client: ReqwestClient::builder()
                 .timeout(Duration::from_secs(DEFAULT_TIMEOUT))
                 .build()?,
@@ -72,30 +59,26 @@ impl Client {
     }
 
     fn get(&self, path: &str) -> Result<reqwest::RequestBuilder> {
-        Ok(self
-            .client
-            .get(format!("{}{}", ACCOUNT_BASE_URL, path).as_str())
-            .bearer_auth(self.token.secret()))
+        if let Some(token) = &self.token {
+            Ok(self
+                .client
+                .get(format!("{}{}", ACCOUNT_BASE_URL, path).as_str())
+                .bearer_auth(token.secret()))
+        } else {
+            Err(Error::NoToken.into())
+        }
     }
 
     fn post(&self, path: &str) -> Result<reqwest::RequestBuilder> {
-        Ok(self
-            .client
-            .post(format!("{}{}", ACCOUNT_BASE_URL, path).as_str())
-            .bearer_auth(self.token.secret()))
-    }
+        if let Some(token) = &self.token {
+            Ok(self
+                .client
+                .post(format!("{}{}", ACCOUNT_BASE_URL, path).as_str())
+                .bearer_auth(token.secret()))
+        } else {
+            Err(Error::NoToken.into())
+        }
 
-    fn post_with_key(&self, path: &str, key: &str) -> Result<reqwest::RequestBuilder> {
-        Ok(self
-            .client
-            .post(format!("{}{}", ACCOUNT_BASE_URL, path).as_str()))
-    }
-
-    fn get_with_key(&self, path: &str, key: &str) -> Result<reqwest::RequestBuilder> {
-        Ok(self
-            .client
-            .get(format!("{}{}", APP_BASE_URL, path).as_str())
-            .header("key", key))
     }
 
     pub async fn get_applications(&self) -> Result<Vec<App>> {
@@ -107,60 +90,43 @@ impl Client {
         Ok(apps)
     }
 
-    pub async fn get_app_token(&self, app: App) -> Result<()> {
-        let token_request = TokenRequest {
-            username: app.id().to_string(),
-            password: app.get_default_key()?.to_string(),
-            grant_type: "password".to_string(),
+    pub async fn get_app_token(&self, app: &App) -> Result<String> {
+        let token_request = RequestToken {
+            scope: vec!(format!("apps:{}",app.id).to_string(), "apps".to_string())
         };
 
-        println!("TokenRequest {:?}", token_request);
-
+        println!("{:?}", token_request);
         let request = self
-            .post_with_key("/api/v2/applications/token", app.get_default_key()?)?
+            .post("/users/restrict-token")?
             .json(&token_request);
-
-        println!("REQUEST: {:?}", request);
-
         let response = request.send().await?;
         let body = response.text().await.unwrap();
-
-        println!("BODY: {:?}", body);
-        Ok(())
+        let token_response: RequestTokenResponse = serde_json::from_str(&body)?;
+        Ok(token_response.access_token)
     }
 
-    pub async fn get_devices(&self, app: App) -> Result<()> {
-        #[derive(Serialize)]
-        struct Request {
-            app_id: String,
+    pub async fn get_devices(&self, app: &App, token: &String) -> Result<Vec<Device>> {
+        let request = self
+            .client
+            .get(format!("{}/applications/{}/devices", APP_BASE_URL, app.id ).as_str())
+            .bearer_auth(token);
+        let response = request.send().await?;
+        let body = response.text().await.unwrap();
+        let devices: Devices = serde_json::from_str(&body)?;
+
+        let mut ret = Vec::new();
+        for device in devices.devices {
+            ret.push(device.lorawan_device)
         }
-
-        let request = self.get_with_key(
-            format!("/applications/{}/devices", app.id(),).as_str(),
-            app.get_default_key()?,
-        )?;
-        //.json(&Request {
-        //    app_id: app.id().to_string()
-        //});
-        println!("{:?}", request);
-        let response = request.send().await?;
-        println!("Response {:?}", response);
-
-        println!("Fetching body");
-        let body = response.text().await.unwrap();
-        println!("{:?}", body);
-        //let apps: Vec<App> = serde_json::from_str(&body)?;
-        Ok(())
+        Ok(ret)
     }
-
-    //eiPq8mEeYRL_PNBZsOpPy-O3ABJXYWulODmQGR5PZzg
 }
 
 #[derive(Clone, Deserialize, Serialize, Debug)]
 pub struct App {
-    id: String,
+    pub id: String,
     euis: Vec<String>,
-    name: String,
+    pub name: String,
     access_keys: Vec<Key>,
 }
 #[derive(Clone, Deserialize, Serialize, Debug)]
@@ -171,61 +137,68 @@ struct Key {
     rights: Vec<String>,
 }
 
-impl App {
-    fn id(&self) -> &String {
-        &self.id
-    }
-    fn get_default_key(&self) -> Result<&String> {
-        for key in &self.access_keys {
-            if key.name == "default key" {
-                return Ok(&key.key);
-            }
-        }
-        panic!("could not find default key");
-    }
+#[derive(Clone, Deserialize, Serialize, Debug)]
+struct RequestToken {
+  scope: Vec<String>
+}
+#[derive(Clone, Deserialize, Serialize, Debug)]
+struct RequestTokenResponse {
+  access_token: String
 }
 
 #[derive(Clone, Deserialize, Serialize, Debug)]
-pub struct TokenRequest {
-    username: String,
-    password: String,
-    grant_type: String,
+struct Devices {
+    devices: Vec<TtnDevice>
 }
 
-// {\"id\":\"soilsensor929\",
-// \"name\":\"Soil Sensor\",
-// \"euis\":[\"70B3D57ED002C177\"],
-// \"created\":\"2020-03-09T17:01:30.086Z\",
-// \"rights\":
-// [\"settings\",\"delete\",\"collaborators\",\"devices\"],
-// \"collaborators\":[{\"username\":\"lthiery929\",\"email\":\"thiery.louis@gmail.com\",\"rights\":[\"settings\",\"delete\",\"collaborators\",\"devices\"]}],\"access_keys\":[{\"name\":\"default key\",\"key\":\"ttn-account-v2.O5zL2lQ76Fq7coQb_BzYvoCJffTJ3RlKtxrDACI_mRM\",\"_id\":\"5e66766aa03b3d003b67cb37\",\"rights\":[\"messages:up:r\",\"messages:down:w\",\"devices\"]}]}\n]\n"
-
-/*
-use base64;
-use reqwest::Client as ReqwestClient;
-
-const BASE_URL: &str = "https://account.thethingsnetwork.org/api/v2";
-const DEFAULT_TIMEOUT: u64 = 120;
-
-#[derive(Clone, Debug)]
-pub struct Client {
-    key: String,
-    client: ReqwestClient,
+#[derive(Clone, Deserialize, Serialize, Debug)]
+struct TtnDevice {
+    app_id: String,
+    dev_id: String,
+    lorawan_device: Device
 }
 
-impl Client {
-    pub fn new() -> Result<Client> {
-        let key = "nAeam3v-jLSX22sSFqNubVFuSTs6Cfy4eC2aVeDWvR4".to_string();//
-        let client = ReqwestClient::builder()
-            .timeout(Duration::from_secs(DEFAULT_TIMEOUT))
-            .build()?;
+#[derive(Clone, Deserialize, Serialize, Debug)]
+pub struct Device {
+    app_eui: String,
+    dev_eui: String,
+    app_id: String,
+    dev_id: String,
+    dev_addr: String,
+    nwk_s_key: String,
+    app_s_key: String,
+    app_key: String,
+    uses32_bit_f_cnt: bool,
+    activation_constraints: String,
+}
 
-        Ok(Client {
-            key,
-            client
-        })
+use std::error::Error as stdError;
+use std::{fmt, str};
+
+#[derive(Debug, Clone)]
+pub enum Error {
+    NoToken
+}
+
+impl fmt::Display for Error {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Error::NoToken => {
+                write!(f, "Client has no token or it has been consumed")
+            }
+        }
+    }
+}
+
+impl stdError for Error {
+    fn description(&self) -> &str {
+        match self {
+            Error::NoToken => "Client has no token or it has been consumed",
+        }
     }
 
-
+    fn cause(&self) -> Option<&dyn stdError> {
+        // Generic error, underlying cause isn't tracked.
+        None
+    }
 }
-*/
