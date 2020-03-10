@@ -142,7 +142,7 @@ async fn run(cli: Cli) -> Result {
 
             table.printstd();
 
-            let index_input = get_input("Import which application? Type 0 for ALL");
+            let index_input = get_input("Import which application? Type 0 for ALL (no more than 10 at a time supported)");
 
             let index = usize::from_str(&index_input)?;
 
