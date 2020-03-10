@@ -9,8 +9,8 @@ const CONF_PATH: &str = ".helium-console-config.toml";
 
 mod client;
 mod config;
-mod types;
 mod ttn;
+mod types;
 
 use types::*;
 
@@ -68,21 +68,21 @@ pub struct Config {
 
 #[tokio::main]
 async fn main() -> Result {
-    let config = config::load(CONF_PATH)?;
-    let client = client::Client::new(config)?;
-
     let cli = Cli::from_args();
 
-    if let Err(e) = run(cli, client).await {
+    if let Err(e) = run(cli).await {
         println!("error: {}", e);
         process::exit(1);
     }
     Ok(())
 }
 
-async fn run(cli: Cli, client: client::Client) -> Result {
+async fn run(cli: Cli) -> Result {
     match cli {
         Cli::Device { cmd } => {
+            let config = config::load(CONF_PATH)?;
+            let client = client::Client::new(config)?;
+
             match cmd {
                 DeviceCmd::List => println!("{:#?}", client.get_devices().await?),
                 DeviceCmd::Get {
@@ -124,12 +124,13 @@ async fn run(cli: Cli, client: client::Client) -> Result {
             Ok(())
         }
         Cli::Ttn => {
-            let client =  ttn::Client::new()?;
+            println!("TTN Import");
+            let client = ttn::Client::new()?;
             let apps = client.get_applications().await?;
             println!("{:?}", apps);
             for app in apps {
                 println!("printing devices for {:?}", app);
-                let apps = client.get_devices(app).await?;
+                let apps = client.get_app_token(app).await?;
             }
             Ok(())
         }
