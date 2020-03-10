@@ -129,7 +129,7 @@ async fn run(cli: Cli) -> Result {
         }
         Cli::Ttn => {
             println!("TTN Import");
-            let client = ttn::Client::new()?;
+            let mut client = ttn::Client::new()?;
             let apps = client.get_applications().await?;
             
             let mut table = Table::new();
@@ -153,12 +153,21 @@ async fn run(cli: Cli) -> Result {
                 Ok(())
             } else {
                 if index == 0 {
-                    for app in apps {
-                        let token = client.get_app_token(&app).await?;
+                    let token = client.get_app_token(apps.clone()).await?;
+                    for app in &apps {
+                        client.get_devices(&app, &token).await?;
                         let devices = client.get_devices(&app, &token).await?;
                         for device in devices {
                             println!("{:?}", device);
                         }
+                    }
+                } else {
+                    let app = apps[index-1].clone();
+                    let token = client.get_app_token(vec![app.clone()]).await?;
+                    client.get_devices(&app, &token).await?;
+                    let devices = client.get_devices(&app, &token).await?;
+                    for device in devices {
+                        println!("{:?}", device);
                     }
                 }
 

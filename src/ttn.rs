@@ -19,7 +19,12 @@ use url::Url;
 
 const ACCOUNT_BASE_URL: &str = "https://account.thethingsnetwork.org";
 
-const APP_BASE_URL: &str = "http://us-west.thethings.network:8084";
+const APP_BASE_URL: [&str; 4] = [
+    "http://us-west.thethings.network:8084",
+    "http://eu.thethings.network:8084",
+    "http://asia-se.thethings.network:8084",
+    "http://brazil.thethings.network:8084",
+];
 
 const DEFAULT_TIMEOUT: u64 = 120;
 
@@ -69,18 +74,6 @@ impl Client {
         }
     }
 
-    fn post(&self, path: &str) -> Result<reqwest::RequestBuilder> {
-        if let Some(token) = &self.token {
-            Ok(self
-                .client
-                .post(format!("{}{}", ACCOUNT_BASE_URL, path).as_str())
-                .bearer_auth(token.secret()))
-        } else {
-            Err(Error::NoToken.into())
-        }
-
-    }
-
     pub async fn get_applications(&self) -> Result<Vec<App>> {
         let request = self.get(format!("/api/v2/applications",).as_str())?;
         let response = request.send().await?;
@@ -90,15 +83,24 @@ impl Client {
         Ok(apps)
     }
 
-    pub async fn get_app_token(&self, app: &App) -> Result<String> {
-        let token_request = RequestToken {
-            scope: vec!(format!("apps:{}",app.id).to_string(), "apps".to_string())
+    pub async fn get_app_token(&mut self, apps: Vec<App>) -> Result<String> {
+        let mut token_request = RequestToken {
+            scope: Vec::new()
         };
 
-        println!("{:?}", token_request);
-        let request = self
-            .post("/users/restrict-token")?
-            .json(&token_request);
+        for app in apps {
+            token_request.scope.push(format!("apps:{}", app.id));
+        }
+
+        let request = if let Some(token) = self.token.take() {
+            self
+            .client
+            .post(format!("{}{}", ACCOUNT_BASE_URL, "/users/restrict-token").as_str())
+            .bearer_auth(token.secret())
+            .json(&token_request)
+        } else {
+            return Err(Error::NoToken.into())
+        };
         let response = request.send().await?;
         let body = response.text().await.unwrap();
         let token_response: RequestTokenResponse = serde_json::from_str(&body)?;
@@ -106,19 +108,24 @@ impl Client {
     }
 
     pub async fn get_devices(&self, app: &App, token: &String) -> Result<Vec<Device>> {
-        let request = self
-            .client
-            .get(format!("{}/applications/{}/devices", APP_BASE_URL, app.id ).as_str())
-            .bearer_auth(token);
-        let response = request.send().await?;
-        let body = response.text().await.unwrap();
-        let devices: Devices = serde_json::from_str(&body)?;
+        for url in &APP_BASE_URL {
+            let request = self
+                .client
+                .get(format!("{}/applications/{}/devices", url, app.id ).as_str())
+                .bearer_auth(token);
+            let response = request.send().await?;
+            if response.status() == 200 {
+                let body = response.text().await.unwrap();
+                let devices: Devices = serde_json::from_str(&body)?;
 
-        let mut ret = Vec::new();
-        for device in devices.devices {
-            ret.push(device.lorawan_device)
+                let mut ret = Vec::new();
+                for device in devices.devices {
+                    ret.push(device.lorawan_device)
+                }
+                return Ok(ret)
+            }
         }
-        Ok(ret)
+        Err(Error::NoHandler.into())
     }
 }
 
@@ -177,7 +184,8 @@ use std::{fmt, str};
 
 #[derive(Debug, Clone)]
 pub enum Error {
-    NoToken
+    NoToken,
+    NoHandler,
 }
 
 impl fmt::Display for Error {
@@ -185,6 +193,9 @@ impl fmt::Display for Error {
         match self {
             Error::NoToken => {
                 write!(f, "Client has no token or it has been consumed")
+            }
+            Error::NoHandler => {
+                write!(f, "No handler servers are associated with App")
             }
         }
     }
@@ -194,6 +205,8 @@ impl stdError for Error {
     fn description(&self) -> &str {
         match self {
             Error::NoToken => "Client has no token or it has been consumed",
+            Error::NoHandler => "No handler servers are associated with App",
+
         }
     }
 
