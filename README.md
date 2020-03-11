@@ -4,21 +4,21 @@
 
 Download a compiled release [here](https://github.com/helium/helium-console-cli/releases).
 
-## Usage
-
-### Setup 
+## Setup 
 First time you use the CLI, you will need to provide an API key. To create an account key, go to your [profile](https://console.helium.com/profile) on Helium Console. From the top right corner, click: Account->Profile.
 
 From there, you may generate a key with a specific name and role. The key will only display once.
 
 The first time you run the CLI, it will prompt you for this key. It will save the key in a local file: '.helium-console-config.toml'
 
+## Usage
+
 ### Features
 
 You can view the most recent documentation by using the help menus. For example: `helium-console-cli --help` or `helium-console-cli device --help`.
 
 Current high level features are:
-* create and delete devices, using (app_eui, app_key, dev_eui) or UUID
+* create and delete devices records, using (app_eui, app_key, dev_eui) or UUID
 * list all device records
 * import devices from The Things Network (TTN)
 
