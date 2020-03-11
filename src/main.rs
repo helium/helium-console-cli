@@ -244,8 +244,26 @@ async fn ttn_import() -> Result {
                     match client.post_device(&request).await {
                         Ok(data) => {
                             println!("Successly Created {:?}", data);
-
-                            if do_label {}
+                            let confirm = match do_label {
+                                UserResponse::Yes => true,
+                                UserResponse::No => false,
+                                UserResponse::Maybe => {
+                                    let first_answer =
+                                        get_input(format!("Add label to created device?").as_str());
+                                    let answer =
+                                        yes_or_no(first_answer, Some("Please type y or n"));
+                                    match answer {
+                                        UserResponse::Yes => true,
+                                        UserResponse::No => false,
+                                        UserResponse::Maybe => {
+                                            panic!("Maybe should not occur happen here")
+                                        }
+                                    }
+                                }
+                            };
+                            if confirm {
+                                //add label
+                            }
                         }
                         Err(err) => println!("{}", err.description()),
                     }
