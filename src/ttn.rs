@@ -51,7 +51,7 @@ impl Client {
                 format!("{}/users/token", ACCOUNT_BASE_URL).as_str(),
             )?)),
         );
-        let access_code = get_input("Provide ttnctl access code");
+        let access_code = get_input("Provide a single use ttnctl access code");
         let code = AuthorizationCode::new(access_code.to_string());
         let token_res = client.exchange_code(code).unwrap();
         Ok(token_res.access_token().clone())

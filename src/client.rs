@@ -64,12 +64,12 @@ impl Client {
     }
 
     pub async fn get_device(&self, get_device: &GetDevice) -> Result<Device> {
-        // TODO: API will change and app_key will also be used
         let request = self.get(
             format!(
-                "api/v1/devices/yolo?dev_eui={}&app_eui={}",
+                "api/v1/devices?dev_eui={}&app_eui={}&app_key={}",
                 get_device.dev_eui(),
-                get_device.app_eui()
+                get_device.app_eui(),
+                get_device.app_key()
             )
             .as_str(),
         )?;
