@@ -54,6 +54,10 @@ impl GetDevice {
     pub fn dev_eui(&self) -> &String {
         &self.dev_eui
     }
+
+    pub fn app_key(&self) -> &String {
+        &self.app_key
+    }
 }
 
 #[derive(Clone, Deserialize, Serialize, Debug)]

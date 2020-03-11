@@ -11,59 +11,27 @@ use structopt::StructOpt;
 pub type Result<T = ()> = std::result::Result<T, Box<dyn std::error::Error>>;
 const CONF_PATH: &str = ".helium-console-config.toml";
 
+mod clicmd;
 mod client;
 mod config;
 mod ttn;
 mod types;
 
+use clicmd::*;
 use config::get_input;
 use std::str::FromStr;
 use types::*;
 
-#[derive(StructOpt, Debug)]
-enum DeviceCmd {
-    /// List all your account devices
-    List,
-    /// Get the full record of your device
-    /// by providing app_eui, app_key, and dev_eui
-    Get {
-        app_eui: String,
-        app_key: String,
-        dev_eui: String,
-    },
-    /// Delete a device
-    /// by providing app_eui, app_key, and dev_eui
-    Delete {
-        app_eui: String,
-        app_key: String,
-        dev_eui: String,
-    },
-    /// Get the full record of your device
-    /// by the UUID
-    GetById { id: String },
-    /// Delete a device
-    /// by the UUID
-    DeleteById { id: String },
-    /// Create a device
-    /// by providing app_eui, app_key, dev_eui and name
-    Create {
-        app_eui: String,
-        app_key: String,
-        dev_eui: String,
-        name: String,
-    },
-}
-
-#[derive(StructOpt, Debug)]
-enum TtnCmd {
-    /// Imports devices from your TTN Account
-    /// (requires ttnctl access code at https://account.thethingsnetwork.org/)
-    Import,
+#[derive(Debug, Deserialize, Serialize)]
+pub struct Config {
+    key: String,
+    base_url: String,
+    request_timeout: u64,
 }
 
 /// Interact with Helium API via CLI
-#[derive(Debug, StructOpt)]
-enum Cli {
+#[derive(StructOpt, Debug)]
+pub enum Cli {
     /// List, create, and delete devices
     Device {
         #[structopt(subcommand)]
@@ -74,13 +42,6 @@ enum Cli {
         #[structopt(subcommand)]
         cmd: TtnCmd,
     },
-}
-
-#[derive(Debug, Deserialize, Serialize)]
-pub struct Config {
-    key: String,
-    base_url: String,
-    request_timeout: u64,
 }
 
 #[tokio::main]
@@ -176,7 +137,7 @@ async fn ttn_import() -> Result {
     let index_input =
         get_input("Import which application? Type 0 for ALL (no more than 10 at a time supported)");
 
-    let index = get_number_from_user(index_input); 
+    let index = get_number_from_user(index_input);
 
     if index > apps.len() {
         println!("There is no app with index {}", index);
@@ -273,8 +234,6 @@ fn yes_or_no(mut answer: String, repeated_prompt: Option<&str>) -> UserResponse 
     }
 }
 
-// let index = usize::from_str(&index_input)?;
-
 fn get_number_from_user(mut answer: String) -> usize {
     loop {
         match usize::from_str(&answer) {
@@ -285,4 +244,3 @@ fn get_number_from_user(mut answer: String) -> usize {
         }
     }
 }
-
