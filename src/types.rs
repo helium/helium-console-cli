@@ -163,7 +163,6 @@ pub enum Error {
     NewDeviceApi,
     NewLabel422,
     NewLabelApi,
-    NewDeviceLabel422,
     NewDeviceLabelApi,
 }
 
@@ -197,9 +196,6 @@ impl fmt::Display for Error {
             Error::NewLabelApi => {
                 write!(f, "Failed Creating Label! Unknown server error")
             }
-            Error::NewDeviceLabel422 => {
-                write!(f, "Failed Creating Device Label! Device Label already exists")
-            }
             Error::NewDeviceLabelApi => {
                 write!(f, "Failed Creating Device Label! Unknown server error")
             }
@@ -221,7 +217,6 @@ impl stdError for Error {
             Error::NewDeviceApi => "Failed Creating Device! Unknown server error", 
             Error::NewLabel422 => "Failed Creating Label! Label with same name already exists under organization",
             Error::NewLabelApi => "Failed Creating Label! Unknown server error",
-            Error::NewDeviceLabel422 => "Failed Creating Device Label! Device Label already exists",
             Error::NewDeviceLabelApi => "Failed Creating Device Label! Unknown server error",
         }
     }
