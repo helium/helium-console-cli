@@ -14,7 +14,7 @@ First time you use the CLI, you will need to provide an API key. To create an ac
 
 From there, you may generate a key with a specific name and role. The key will only display once.
 
-The first time you run the CLI, it will prompt you for this key. It will save the key in a local file: '.helium-console-config.toml'
+The first time you run the CLI, it will prompt you for this key. It will save the key in a local file: `.helium-console-config.toml`
 
 ## Usage
 
