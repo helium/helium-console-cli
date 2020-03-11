@@ -176,7 +176,7 @@ async fn ttn_import() -> Result {
     let index_input =
         get_input("Import which application? Type 0 for ALL (no more than 10 at a time supported)");
 
-    let index = usize::from_str(&index_input)?;
+    let index = get_number_from_user(index_input); 
 
     if index > apps.len() {
         println!("There is no app with index {}", index);
@@ -267,9 +267,22 @@ fn yes_or_no(mut answer: String, repeated_prompt: Option<&str>) -> UserResponse 
                 return UserResponse::No;
             }
             _ => {
-                println!("Please type Yes or No or y or n or whatever");
                 answer = get_input(prompt);
             }
         }
     }
 }
+
+// let index = usize::from_str(&index_input)?;
+
+fn get_number_from_user(mut answer: String) -> usize {
+    loop {
+        match usize::from_str(&answer) {
+            Ok(num) => return num,
+            _ => {
+                answer = get_input("Invalid number. Please enter a number");
+            }
+        }
+    }
+}
+
