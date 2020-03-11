@@ -15,21 +15,12 @@ The first time you run the CLI, it will prompt you for this key. It will save th
 
 ### Features
 
-Currently, the Console CLI only has `device` focused features. You can view the most current commands by doing accessing the help menu: `helium-console-cli device --help`:
+You can view the most recent documentation by using the help menus. For example: `helium-console-cli --help` or `helium-console-cli device --help`.
 
-```
-USAGE:
-    helium-console-cli device <SUBCOMMAND>
-
-SUBCOMMANDS:
-    create          Create a device by providing app_eui, app_key, dev_eui and name
-    delete          Delete a device by providing app_eui, app_key, and dev_eui
-    delete-by-id    Delete a device by the UUID
-    get             Get the full record of your device by providing app_eui, app_key, and dev_eui
-    get-by-id       Get the full record of your device by the UUID
-    help            Prints this message or the help of the given subcommand(s)
-    list            List all your account devices
-```
+Current high level features are:
+* create and delete devices, using (app_eui, app_key, dev_eui) or UUID
+* list all device records
+* import devices from The Things Network (TTN)
 
 ### Examples
 
@@ -98,3 +89,14 @@ Which will return an array of all your devices:
     }
 ]
 ```
+### TTN Import
+
+To start an import session, use the ttn import command:
+
+```
+helium-console-cli ttn import
+```
+
+You will be prompted for a ttnctl access code, which you can generate by clicking on `ttnctl access code` [here](https://account.thethingsnetwork.org/). This single-use access code is valid for 5 minutes. During this time the CLI may use the code to request an OAuth2 token which expires after 60 minutes.
+
+The CLI's prompts will help you select to import from a single application or all applications (maximum 10, otherwise the OAuth2 token is "used up"). In addition, you may import all the devices at once or you may approve device import one by one.
