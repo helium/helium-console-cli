@@ -56,18 +56,20 @@ enum DeviceCmd {
 
 #[derive(StructOpt, Debug)]
 enum TtnCmd {
-    /// Imports devices from TTN Account
+    /// Imports devices from your TTN Account
+    /// (requires ttnctl access code at https://account.thethingsnetwork.org/)
     Import,
 }
 
 /// Interact with Helium API via CLI
 #[derive(Debug, StructOpt)]
 enum Cli {
-    /// Device model API allows you list, create, and delete devices
+    /// List, create, and delete devices
     Device {
         #[structopt(subcommand)]
         cmd: DeviceCmd,
     },
+    /// Import devices from TTN to Helium
     Ttn {
         #[structopt(subcommand)]
         cmd: TtnCmd,
@@ -212,7 +214,7 @@ async fn ttn_import() -> Result {
         let client = client::Client::new(config)?;
 
         let first_answer =
-            get_input(format!("Import all {} devices? Please type y or n", devices.len()).as_str());
+            get_input(format!("Import all {} devices at once? Otherwise, proceed with device by device import. Please type y or n", devices.len()).as_str());
         let input_all = yes_or_no(first_answer, Some("Import ALL devices? Please type y or n"));
 
         for ttn_device in devices {
