@@ -42,9 +42,7 @@ pub enum LabelCmd {
     DeleteById { id: String },
     /// Create a device
     /// by providing a label name
-    Create {
-        name: String
-    },
+    Create { name: String },
 }
 
 #[derive(StructOpt, Debug)]

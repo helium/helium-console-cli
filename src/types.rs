@@ -23,6 +23,7 @@ pub struct GetDevice {
     app_key: String,
     dev_eui: String,
 }
+
 impl GetDevice {
     pub fn from_user_input(app_eui: String, app_key: String, dev_eui: String) -> Result<GetDevice> {
         let app_eui_decoded = hex::decode(app_eui.clone())?;
@@ -112,11 +113,11 @@ pub struct NewLabelRequest {
 }
 
 impl NewLabelRequest {
-    pub fn from_string(string: &String) -> NewLabelRequest{
+    pub fn from_string(string: &String) -> NewLabelRequest {
         NewLabelRequest {
             label: LabelRequest {
-                name: string.clone()
-            }
+                name: string.clone(),
+            },
         }
     }
 }

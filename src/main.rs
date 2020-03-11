@@ -111,19 +111,14 @@ async fn run(cli: Cli) -> Result {
 
             match cmd {
                 LabelCmd::List => println!("{:#?}", client.get_labels().await?),
-                LabelCmd::Create {
-                    name,
-                } => {
+                LabelCmd::Create { name } => {
                     let request = NewLabelRequest::from_string(&name);
                     println!("{:#?}", client.post_label(&request).await?);
                 }
-                LabelCmd::DeleteById {
-                    id
-                } => {
+                LabelCmd::DeleteById { id } => {
                     validate_uuid_input(&id)?;
                     client.delete_label(&id).await?;
                 }
-
             }
         }
         Cli::Ttn { cmd } => match cmd {

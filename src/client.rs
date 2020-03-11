@@ -106,10 +106,10 @@ impl Client {
         let response = request.send().await?;
         if response.status() == 200 {
             println!("Device delete successful");
-        } else if response.status() == 404{
+        } else if response.status() == 404 {
             println!("Device not found. Delete failed.");
         }
-        let _response_body = response.text().await?; 
+        let _response_body = response.text().await?;
         Ok(())
     }
 
@@ -141,7 +141,7 @@ impl Client {
         let response = request.send().await?;
         if response.status() == 200 {
             println!("Label delete successful");
-        } else if response.status() == 404{
+        } else if response.status() == 404 {
             println!("Label not found. Delete failed.");
         }
         let _response_body = response.text().await?;
