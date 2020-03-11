@@ -20,9 +20,7 @@ The first time you run the CLI, it will prompt you for this key. It will save th
 
 ### Features
 
-Currently, the Console CLI only has `device` focused features. You can view the most current commands by accessing the help menu: `helium-console-cli device --help`:
-
-You can view the most recent documentation by using the help menus. For example: `helium-console-cli --help` or `helium-console-cli device --help`.
+You can view the most current commands, features, and documentation by accessing the help menus. For example: `helium-console-cli --help` or `helium-console-cli device --help`.
 
 Current high level features are:
 * create and delete devices records, using (app_eui, app_key, dev_eui) or UUID
