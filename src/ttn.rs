@@ -5,17 +5,17 @@ extern crate url;
 
 use super::config::get_input;
 use super::Result;
+use super::types::NewDeviceRequest;
 use oauth2::basic::BasicClient;
 use oauth2::prelude::*;
-use oauth2::{AuthUrl, AuthorizationCode, ClientId, ClientSecret, TokenResponse, TokenUrl};
+use oauth2::{
+    AuthUrl, AuthorizationCode, ClientId, ClientSecret, TokenResponse, TokenUrl,
+};
 use reqwest::Client as ReqwestClient;
 use std::time::Duration;
 use url::Url;
-
 use oauth2::AccessToken;
 
-type ProfileAccessToken = String;
-type DeviceAccessToken = String;
 
 const ACCOUNT_BASE_URL: &str = "https://account.thethingsnetwork.org";
 
@@ -61,38 +61,34 @@ impl Client {
     }
 
     fn get_with_token(&self, token: &str, path: &str) -> reqwest::RequestBuilder {
-        self.client
+        self
+            .client
             .get(format!("{}{}", ACCOUNT_BASE_URL, path).as_str())
             .bearer_auth(token)
     }
 
     fn post_with_token(&self, token: &str, path: &str) -> reqwest::RequestBuilder {
-        self.client
+        self
+            .client
             .post(format!("{}{}", ACCOUNT_BASE_URL, path).as_str())
             .bearer_auth(token)
     }
 
     pub async fn get_apps(&self, token: &AccessToken) -> Result<Vec<App>> {
-        let request =
-            self.get_with_token(&token.secret(), format!("/api/v2/applications").as_str());
+        let request = self.get_with_token(&token.secret(), format!("/api/v2/applications").as_str());
         let response = request.send().await?;
         let body = response.text().await.unwrap();
         let apps: Vec<App> = serde_json::from_str(&body)?;
         Ok(apps)
     }
 
-    pub async fn exchange_for_app_token(
-        &mut self,
-        token: AccessToken,
-        apps: Vec<App>,
-    ) -> Result<String> {
+    pub async fn exchange_for_app_token(&mut self, token: AccessToken, apps: Vec<App>) -> Result<String> {
         let mut token_request = RequestToken { scope: Vec::new() };
 
         for app in apps {
             token_request.scope.push(format!("apps:{}", app.id));
         }
-        let request = self
-            .post_with_token(token.secret(), "/users/restrict-token")
+        let request = self.post_with_token(token.secret(), "/users/restrict-token")
             .json(&token_request);
 
         let response = request.send().await?;
@@ -102,12 +98,15 @@ impl Client {
     }
 
     pub async fn get_devices(&self, app: &App, token: &String) -> Result<Vec<Device>> {
+        // We brute force going through handler URLs
         for url in &APP_BASE_URL {
             let request = self
                 .client
                 .get(format!("{}/applications/{}/devices", url, app.id).as_str())
                 .bearer_auth(token);
             let response = request.send().await?;
+            // Response 200 means we got a hit
+            // this server has device information
             if response.status() == 200 {
                 let body = response.text().await.unwrap();
                 let devices: Devices = serde_json::from_str(&body)?;
@@ -171,6 +170,19 @@ pub struct Device {
     app_key: String,
     uses32_bit_f_cnt: bool,
     activation_constraints: String,
+}
+
+
+impl Device {
+    pub fn into_new_device_request(self) -> Result<NewDeviceRequest> {
+        NewDeviceRequest::from_user_input(
+            self.app_eui,
+            self.app_key,
+            self.dev_eui,
+            // assign it some unique'ish name
+            self.dev_id,
+        )
+    }
 }
 
 use std::error::Error as stdError;

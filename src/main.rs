@@ -131,11 +131,11 @@ async fn run(cli: Cli) -> Result {
         }
         Cli::Ttn => {
             println!("Generate a ttnctl access code at https://account.thethingsnetwork.org/");
-            let mut client = ttn::Client::new()?;
+            let mut ttn_client = ttn::Client::new()?;
 
-            let account_token = client.get_account_token()?;
+            let account_token = ttn_client.get_account_token()?;
 
-            let apps = client.get_apps(&account_token).await?;
+            let apps = ttn_client.get_apps(&account_token).await?;
 
             let mut table = Table::new();
             table.add_row(row!["Index", "Name", "ID"]);
@@ -155,6 +155,7 @@ async fn run(cli: Cli) -> Result {
                 println!("There is no app with index {}", index);
                 Ok(())
             } else {
+                let mut devices = Vec::new();
                 // 0 index is reserved to select all
                 if index == 0 {
                     // You can restrict the OAuth2 token into having access to
@@ -166,30 +167,33 @@ async fn run(cli: Cli) -> Result {
                     }
 
                     // the account token is consumed
-                    let token = client
+                    let token = ttn_client
                         .exchange_for_app_token(account_token, apps.clone())
                         .await?;
                     for app in &apps {
-                        client.get_devices(&app, &token).await?;
-                        let devices = client.get_devices(&app, &token).await?;
-                        for device in devices {
-                            println!("{:?}", device);
-                        }
+                        ttn_client.get_devices(&app, &token).await?;
+                        devices.extend(ttn_client.get_devices(&app, &token).await?);
                     }
                 // you can select one by one
                 } else {
                     let app = apps[index - 1].clone();
                     // the account token is consumed
-                    let token = client
+                    let token = ttn_client
                         .exchange_for_app_token(account_token, vec![app.clone()])
                         .await?;
-                    client.get_devices(&app, &token).await?;
-                    let devices = client.get_devices(&app, &token).await?;
-                    for device in devices {
-                        println!("{:?}", device);
-                    }
+                    devices.extend(ttn_client.get_devices(&app, &token).await?);
                 }
 
+
+                let config = config::load(CONF_PATH)?;
+                let client = client::Client::new(config)?;
+
+                for ttn_device in devices {
+                    println!("{:?}", ttn_device);
+                    let request = ttn_device.into_new_device_request()?;
+                    println!("{:#?}", client.post_device(request).await?);
+
+                }
                 Ok(())
             }
         }

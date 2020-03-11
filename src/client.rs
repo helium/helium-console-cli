@@ -56,7 +56,7 @@ impl Client {
     }
 
     pub async fn get_devices(&self) -> Result<Vec<Device>> {
-        let request = self.get("api/ext/devices")?;
+        let request = self.get("api/v1/devices")?;
         let response = request.send().await?;
         let body = response.text().await.unwrap();
         let devices: Vec<Device> = serde_json::from_str(&body)?;
@@ -67,7 +67,7 @@ impl Client {
         // TODO: API will change and app_key will also be used
         let request = self.get(
             format!(
-                "api/ext/devices/yolo?dev_eui={}&app_eui={}",
+                "api/v1/devices/yolo?dev_eui={}&app_eui={}",
                 get_device.dev_eui(),
                 get_device.app_eui()
             )
@@ -80,7 +80,7 @@ impl Client {
     }
 
     pub async fn get_device_by_id(&self, id: &String) -> Result<Device> {
-        let request = self.get(format!("api/ext/devices/{}", id).as_str())?;
+        let request = self.get(format!("api/v1/devices/{}", id).as_str())?;
         let response = request.send().await?;
         let body = response.text().await.unwrap();
         let device: Device = serde_json::from_str(&body)?;
@@ -88,15 +88,16 @@ impl Client {
     }
 
     pub async fn post_device(&self, new_device_request: NewDeviceRequest) -> Result<Device> {
-        let request = self.post("api/ext/devices")?.json(&new_device_request);
+        let request = self.post("api/v1/devices")?.json(&new_device_request);
         let response = request.send().await?;
         let body = response.text().await?;
+        println!("POST DEVICE");
         let device: Device = serde_json::from_str(&body)?;
         Ok(device)
     }
 
     pub async fn delete_device(&self, id: &String) -> Result<()> {
-        let request = self.delete(format!("api/ext/devices/{}", id).as_str())?;
+        let request = self.delete(format!("api/v1/devices/{}", id).as_str())?;
         let response = request.send().await?;
         let _response_body = response.text().await?;
         println!("Delete successful");
