@@ -14,6 +14,7 @@ DEPLOY_TO_GITHUB: &DEPLOY_TO_GITHUB
     - mkdir $name
     - cp target/$TARGET/release/helium-console-cli$EXE $name/
     - cp LICENSE $name/
+    - cp README.md $name/
     - zip -r $name.zip $name
   deploy:
     provider: releases
