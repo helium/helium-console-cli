@@ -103,6 +103,14 @@ async fn run(cli: Cli) -> Result {
                     validate_uuid_input(&id)?;
                     client.delete_device(&id).await?;
                 }
+                DeviceCmd::AddLabel { device, label } => {
+                    let device_label = DeviceLabel::from_uuids(device, label)?;
+                    client.add_device_label(&device_label).await?;
+                }
+                DeviceCmd::RemoveLabel { device, label } => {
+                    let device_label = DeviceLabel::from_uuids(device, label)?;
+                    client.remove_device_label(&device_label).await?;
+                }
             }
         }
         Cli::Label { cmd } => {
@@ -131,7 +139,7 @@ async fn run(cli: Cli) -> Result {
 }
 
 /// Throws an error if UUID isn't properly input
-fn validate_uuid_input(id: &String) -> Result {
+pub fn validate_uuid_input(id: &String) -> Result {
     if let Err(err) = uuid::Uuid::parse_str(id.as_str()) {
         println!("{} [input: {}]", err, id);
         return Err(Error::InvalidUuid.into());

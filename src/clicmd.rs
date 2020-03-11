@@ -20,10 +20,14 @@ pub enum DeviceCmd {
     },
     /// Get the full record of your device
     /// by the UUID
-    GetById { id: String },
+    GetById {
+        id: String,
+    },
     /// Delete a device
     /// by the UUID
-    DeleteById { id: String },
+    DeleteById {
+        id: String,
+    },
     /// Create a device
     /// by providing app_eui, app_key, dev_eui and name
     Create {
@@ -31,6 +35,18 @@ pub enum DeviceCmd {
         app_key: String,
         dev_eui: String,
         name: String,
+    },
+    // Add a label to the device
+    // by providing device_uuid and label_uuid
+    AddLabel {
+        device: String,
+        label: String,
+    },
+    // Remove a label from device
+    // by providing device_uuid and label_uuid
+    RemoveLabel {
+        device: String,
+        label: String,
     },
 }
 

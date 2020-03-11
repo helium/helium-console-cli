@@ -147,4 +147,32 @@ impl Client {
         let _response_body = response.text().await?;
         Ok(())
     }
+
+    /// Device Label
+    pub async fn add_device_label(&self, device_label: &DeviceLabel) -> Result<()> {
+        let request = self.post("api/v1/device_labels")?.json(&device_label);
+        let response = request.send().await?;
+        if response.status() == 201 || response.status() == 200 {
+            let body = response.text().await?;
+            println!("{:?}", body);
+            Ok(())
+        } else if response.status() == 422 {
+            Err(Error::NewDeviceLabel422.into())
+        } else {
+            Err(Error::NewDeviceLabelApi.into())
+        }
+    }
+
+    pub async fn remove_device_label(&self, device_label: &DeviceLabel) -> Result<()> {
+        let request = self.post("api/v1/device_labels")?.json(&device_label);
+        let response = request.send().await?;
+        if response.status() == 200 {
+            println!("Device label delete successful");
+        } else if response.status() == 404 {
+            println!("Device label not found. Delete failed.");
+        }
+        let body = response.text().await?;
+        println!("{:?}", body);
+        Ok(())
+    }
 }
