@@ -8,7 +8,7 @@ Download a compiled release [here](https://github.com/helium/helium-console-cli/
 
 ### Building on Windows
 **Build Tools for Visual Studio 2019**  
-Download Build Tools Only [here](https://visualstudio.microsoft.com/thank-you-downloading-visual-studio/?sku=BuildTools&rel=16) or Download Visual Studio 2019 with Build Tools [here](https://visualstudio.microsoft.com/thank-you-downloading-visual-studio/?sku=Community&rel=16)  
+Download Build Tools only [here](https://visualstudio.microsoft.com/thank-you-downloading-visual-studio/?sku=BuildTools&rel=16) or Download Visual Studio 2019 with Build Tools [here](https://visualstudio.microsoft.com/thank-you-downloading-visual-studio/?sku=Community&rel=16)  
 When installer is complete, select C++ Build Tools from the tile menu, use default options, and install. 
 
 ### Setup 
@@ -20,7 +20,7 @@ The first time you run the CLI, it will prompt you for this key. It will save th
 
 ### Features
 
-Currently, the Console CLI only has `device` focused features. You can view the most current commands by doing accessing the help menu: `helium-console-cli device --help`:
+Currently, the Console CLI only has `device` focused features. You can view the most current commands by accessing the help menu: `helium-console-cli device --help`:
 
 ```
 USAGE:
