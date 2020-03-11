@@ -214,13 +214,12 @@ async fn ttn_import() -> Result {
             let first_answer =
                 get_input("Skip applying TTN application ID as Label to ALL devices? Otherwise, proceed with device by device approval. Please type y or n");
             let dont_label_all = yes_or_no(first_answer, Some(" Please type y or n"));
-            
+
             match dont_label_all {
                 UserResponse::No => UserResponse::Maybe,
                 UserResponse::Yes => UserResponse::No,
                 UserResponse::Maybe => panic!("maybe not valid here"),
             }
-            
         } else {
             UserResponse::Yes
         };
@@ -243,14 +242,11 @@ async fn ttn_import() -> Result {
                 UserResponse::Yes => {
                     let request = ttn_device.into_new_device_request()?;
                     match client.post_device(&request).await {
-                        Ok(data) => { 
+                        Ok(data) => {
                             println!("Successly Created {:?}", data);
 
-                            if do_label {
-                                
-                            }
-
-                        },
+                            if do_label {}
+                        }
                         Err(err) => println!("{}", err.description()),
                     }
                 }
