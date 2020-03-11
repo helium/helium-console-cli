@@ -9,8 +9,8 @@ use toml;
 const DEFAULT_BASE_URL: &str = "https://console.helium.com";
 const DEFAULT_TIMEOUT: u64 = 120;
 
-fn get_input(prompt: &str) -> String {
-    print!("{}", prompt);
+pub fn get_input(prompt: &str) -> String {
+    print!("{}\r\n", prompt);
     let mut input = String::new();
     match stdin().read_line(&mut input) {
         Ok(_goes_into_input_above) => {}
@@ -22,7 +22,7 @@ fn get_input(prompt: &str) -> String {
 pub fn load(path: &str) -> Result<Config> {
     if !Path::new(path).exists() {
         let mut file = fs::File::create(path)?;
-        let key = get_input("Enter API key\r\n");
+        let key = get_input("Enter API key");
 
         // verify API key
         let key_verify = base64::decode(&key)?;

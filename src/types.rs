@@ -112,6 +112,7 @@ pub enum Error {
     InvalidDevEui,
     InvalidApiKey,
     InvalidUuid,
+    NewDevice422,
 }
 
 impl fmt::Display for Error {
@@ -132,6 +133,9 @@ impl fmt::Display for Error {
             Error::InvalidUuid => {
                 write!(f, "Invalid UUID input. Expected in hyphenated form \"00000000-0000-0000-0000-000000000000\"")
             }
+            Error::NewDevice422 => {
+                write!(f, "Failed Creating Device! Device with identical credentials already exists")
+            }
         }
     }
 }
@@ -144,6 +148,7 @@ impl stdError for Error {
             Error::InvalidDevEui => "Invalid DevEui input. Must be 8 bytes represented in hex (\"0123456789ABCDEF\")",
             Error::InvalidApiKey => "Invalid Api Key. Must be 32 bytes represented in base64",
             Error::InvalidUuid => "Invalid UUID input. Expected in hyphenated form \"00000000-0000-0000-0000-000000000000\"",
+            Error::NewDevice422 => "Failed Creating Device! Device with identical credentials already exists",
         }
     }
 

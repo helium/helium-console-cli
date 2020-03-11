@@ -1,6 +1,6 @@
 [package]
 name = "helium-console-cli"
-version = "0.1.0"
+version = "0.1.2"
 authors = ["Louis Thiery <louis@helium.com>"]
 edition = "2018"
 
@@ -15,3 +15,8 @@ hex = "0.4"
 base64 = "0.11"
 uuid = "0.8"
 toml = "0.5"
+oauth2 = "2.0"
+rand = "0.7.3"
+url = "^1.7.2"
+hyper = "0.13.3"
+prettytable-rs = "^0.8"
