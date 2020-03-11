@@ -2,7 +2,7 @@ use structopt::StructOpt;
 
 #[derive(StructOpt, Debug)]
 pub enum DeviceCmd {
-    /// List all your account devices
+    /// List all your organization's devices
     List,
     /// Get the full record of your device
     /// by providing app_eui, app_key, and dev_eui
@@ -31,6 +31,19 @@ pub enum DeviceCmd {
         app_key: String,
         dev_eui: String,
         name: String,
+    },
+}
+
+#[derive(StructOpt, Debug)]
+pub enum LabelCmd {
+    /// List all your organization's labels
+    List,
+    /// Delete a label by id
+    DeleteById { id: String },
+    /// Create a device
+    /// by providing a label name
+    Create {
+        name: String
     },
 }
 

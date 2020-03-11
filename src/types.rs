@@ -54,6 +54,10 @@ impl GetDevice {
     pub fn dev_eui(&self) -> &String {
         &self.dev_eui
     }
+
+    pub fn app_key(&self) -> &String {
+        &self.app_key
+    }
 }
 
 #[derive(Clone, Deserialize, Serialize, Debug)]
@@ -102,6 +106,32 @@ impl NewDeviceRequest {
     }
 }
 
+#[derive(Clone, Deserialize, Serialize, Debug)]
+pub struct NewLabelRequest {
+    label: LabelRequest,
+}
+
+impl NewLabelRequest {
+    pub fn from_string(string: &String) -> NewLabelRequest{
+        NewLabelRequest {
+            label: LabelRequest {
+                name: string.clone()
+            }
+        }
+    }
+}
+
+#[derive(Clone, Deserialize, Serialize, Debug)]
+pub struct LabelRequest {
+    name: String,
+}
+
+#[derive(Clone, Deserialize, Serialize, Debug)]
+pub struct Label {
+    id: String,
+    name: String,
+}
+
 use std::error::Error as stdError;
 use std::{fmt, str};
 
@@ -113,6 +143,9 @@ pub enum Error {
     InvalidApiKey,
     InvalidUuid,
     NewDevice422,
+    NewDeviceApi,
+    NewLabel422,
+    NewLabelApi,
 }
 
 impl fmt::Display for Error {
@@ -136,6 +169,16 @@ impl fmt::Display for Error {
             Error::NewDevice422 => {
                 write!(f, "Failed Creating Device! Device with identical credentials already exists")
             }
+            Error::NewDeviceApi => {
+                write!(f, "Failed Creating Device! Unknown server error")
+            }
+            Error::NewLabel422 => {
+                write!(f, "Failed Creating Label! Label with same name already exists under organization")
+            }
+            Error::NewLabelApi => {
+                write!(f, "Failed Creating Label! Unknown server error")
+            }
+
         }
     }
 }
@@ -149,6 +192,9 @@ impl stdError for Error {
             Error::InvalidApiKey => "Invalid Api Key. Must be 32 bytes represented in base64",
             Error::InvalidUuid => "Invalid UUID input. Expected in hyphenated form \"00000000-0000-0000-0000-000000000000\"",
             Error::NewDevice422 => "Failed Creating Device! Device with identical credentials already exists",
+            Error::NewDeviceApi => "Failed Creating Device! Unknown server error", 
+            Error::NewLabel422 => "Failed Creating Label! Label with same name already exists under organization",
+            Error::NewLabelApi => "Failed Creating Label! Unknown server error",
         }
     }
 

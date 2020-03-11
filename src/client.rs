@@ -66,7 +66,7 @@ impl Client {
     pub async fn get_device(&self, get_device: &GetDevice) -> Result<Device> {
         let request = self.get(
             format!(
-                "api/v1/devices?dev_eui={}&app_eui={}&app_key={}",
+                "api/v1/devices?dev_eui={}&app_eui={}&app_eui={}",
                 get_device.dev_eui(),
                 get_device.app_eui(),
                 get_device.app_key()
@@ -94,16 +94,57 @@ impl Client {
             let body = response.text().await?;
             let device: Device = serde_json::from_str(&body)?;
             Ok(device)
-        } else {
+        } else if response.status() == 422 {
             Err(Error::NewDevice422.into())
+        } else {
+            Err(Error::NewDeviceApi.into())
         }
     }
 
     pub async fn delete_device(&self, id: &String) -> Result<()> {
         let request = self.delete(format!("api/v1/devices/{}", id).as_str())?;
         let response = request.send().await?;
+        if response.status() == 200 {
+            println!("Device delete successful");
+        } else if response.status() == 404{
+            println!("Device not found. Delete failed.");
+        }
+        let _response_body = response.text().await?; 
+        Ok(())
+    }
+
+    /// Labels
+    pub async fn get_labels(&self) -> Result<Vec<Label>> {
+        let request = self.get("api/v1/labels")?;
+        let response = request.send().await?;
+        let body = response.text().await.unwrap();
+        let labels: Vec<Label> = serde_json::from_str(&body)?;
+        Ok(labels)
+    }
+
+    pub async fn post_label(&self, new_label_request: &NewLabelRequest) -> Result<Label> {
+        let request = self.post("api/v1/labels")?.json(&new_label_request);
+        let response = request.send().await?;
+        if response.status() == 201 {
+            let body = response.text().await?;
+            let label: Label = serde_json::from_str(&body)?;
+            Ok(label)
+        } else if response.status() == 422 {
+            Err(Error::NewLabel422.into())
+        } else {
+            Err(Error::NewLabelApi.into())
+        }
+    }
+
+    pub async fn delete_label(&self, id: &String) -> Result<()> {
+        let request = self.delete(format!("api/v1/labels/{}", id).as_str())?;
+        let response = request.send().await?;
+        if response.status() == 200 {
+            println!("Label delete successful");
+        } else if response.status() == 404{
+            println!("Label not found. Delete failed.");
+        }
         let _response_body = response.text().await?;
-        println!("Delete successful");
         Ok(())
     }
 }

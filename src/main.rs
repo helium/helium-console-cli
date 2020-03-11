@@ -11,17 +11,16 @@ use structopt::StructOpt;
 pub type Result<T = ()> = std::result::Result<T, Box<dyn std::error::Error>>;
 const CONF_PATH: &str = ".helium-console-config.toml";
 
+mod clicmd;
 mod client;
 mod config;
 mod ttn;
 mod types;
-mod clicmd;
 
+use clicmd::*;
 use config::get_input;
 use std::str::FromStr;
 use types::*;
-use clicmd::*;
-
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Config {
@@ -39,7 +38,7 @@ pub enum Cli {
         cmd: DeviceCmd,
     },
     /// List, create, and delete labels
-    Device {
+    Label {
         #[structopt(subcommand)]
         cmd: LabelCmd,
     },
@@ -106,6 +105,27 @@ async fn run(cli: Cli) -> Result {
                 }
             }
         }
+        Cli::Label { cmd } => {
+            let config = config::load(CONF_PATH)?;
+            let client = client::Client::new(config)?;
+
+            match cmd {
+                LabelCmd::List => println!("{:#?}", client.get_labels().await?),
+                LabelCmd::Create {
+                    name,
+                } => {
+                    let request = NewLabelRequest::from_string(&name);
+                    println!("{:#?}", client.post_label(&request).await?);
+                }
+                LabelCmd::DeleteById {
+                    id
+                } => {
+                    validate_uuid_input(&id)?;
+                    client.delete_label(&id).await?;
+                }
+
+            }
+        }
         Cli::Ttn { cmd } => match cmd {
             TtnCmd::Import => {
                 ttn_import().await?;
@@ -143,7 +163,7 @@ async fn ttn_import() -> Result {
     let index_input =
         get_input("Import which application? Type 0 for ALL (no more than 10 at a time supported)");
 
-    let index = get_number_from_user(index_input); 
+    let index = get_number_from_user(index_input);
 
     if index > apps.len() {
         println!("There is no app with index {}", index);
@@ -240,8 +260,6 @@ fn yes_or_no(mut answer: String, repeated_prompt: Option<&str>) -> UserResponse 
     }
 }
 
-// let index = usize::from_str(&index_input)?;
-
 fn get_number_from_user(mut answer: String) -> usize {
     loop {
         match usize::from_str(&answer) {
@@ -252,4 +270,3 @@ fn get_number_from_user(mut answer: String) -> usize {
         }
     }
 }
-
