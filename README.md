@@ -6,9 +6,10 @@ Download a compiled release [here](https://github.com/helium/helium-console-cli/
 
 ## Usage
 
-### Windows
-
-On Windows, the CLI requires [mingw](http://www.mingw.org/wiki/Install_MinGW) at the moment. Do a default installation for the necessary dependencies.
+### Building on Windows
+**Build Tools for Visual Studio 2019**  
+Download Build Tools Only [here](https://visualstudio.microsoft.com/thank-you-downloading-visual-studio/?sku=BuildTools&rel=16) or Download Visual Studio 2019 with Build Tools [here](https://visualstudio.microsoft.com/thank-you-downloading-visual-studio/?sku=Community&rel=16)  
+When installer is complete, select C++ Build Tools from the tile menu, use default options, and install. 
 
 ### Setup 
 First time you use the CLI, you will need to provide an API key. To create an account key, go to your [profile](https://console.helium.com/profile) on Helium Console. From the top right corner, click: Account->Profile.
