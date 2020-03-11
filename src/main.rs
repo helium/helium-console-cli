@@ -206,6 +206,24 @@ async fn ttn_import() -> Result {
         let first_answer =
             get_input(format!("Import all {} devices at once? Otherwise, proceed with device by device import. Please type y or n", devices.len()).as_str());
         let input_all = yes_or_no(first_answer, Some("Import ALL devices? Please type y or n"));
+        let first_answer =
+            get_input("Apply TTN application ID as Label to ALL devices? Please type y or n");
+        let label_all = yes_or_no(first_answer, Some(" Please type y or n"));
+
+        let do_label = if UserResponse::No == label_all {
+            let first_answer =
+                get_input("Skip applying TTN application ID as Label to ALL devices? Otherwise, proceed with device by device approval. Please type y or n");
+            let dont_label_all = yes_or_no(first_answer, Some(" Please type y or n"));
+            
+            match dont_label_all {
+                UserResponse::No => UserResponse::Maybe,
+                UserResponse::Yes => UserResponse::No,
+                UserResponse::Maybe => panic!("maybe not valid here"),
+            }
+            
+        } else {
+            UserResponse::Yes
+        };
 
         for ttn_device in devices {
             // if user elected to import all
@@ -218,28 +236,39 @@ async fn ttn_import() -> Result {
                     );
                     yes_or_no(first_answer, Some("Please type y or n"))
                 }
+                UserResponse::Maybe => panic!("User reponse for create device must be yes or no"),
             };
 
             match create_device {
                 UserResponse::Yes => {
                     let request = ttn_device.into_new_device_request()?;
                     match client.post_device(&request).await {
-                        Ok(data) => println!("Successly Created {:?}", data),
+                        Ok(data) => { 
+                            println!("Successly Created {:?}", data);
+
+                            if do_label {
+                                
+                            }
+
+                        },
                         Err(err) => println!("{}", err.description()),
                     }
                 }
                 UserResponse::No => {
                     println!("Skipping device");
                 }
+                UserResponse::Maybe => panic!("User reponse for create device must be yes or no"),
             }
         }
     }
     Ok(())
 }
 
+#[derive(PartialEq)]
 enum UserResponse {
     Yes,
     No,
+    Maybe,
 }
 
 fn yes_or_no(mut answer: String, repeated_prompt: Option<&str>) -> UserResponse {
