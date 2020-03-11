@@ -130,9 +130,12 @@ async fn run(cli: Cli) -> Result {
             Ok(())
         }
         Cli::Ttn => {
-            println!("TTN Import");
+            println!("Generate a ttnctl access code at https://account.thethingsnetwork.org/");
             let mut client = ttn::Client::new()?;
-            let apps = client.get_applications().await?;
+
+            let account_token = client.get_account_token()?;
+
+            let apps = client.get_apps(&account_token).await?;
 
             let mut table = Table::new();
             table.add_row(row!["Index", "Name", "ID"]);
@@ -142,7 +145,9 @@ async fn run(cli: Cli) -> Result {
 
             table.printstd();
 
-            let index_input = get_input("Import which application? Type 0 for ALL (no more than 10 at a time supported)");
+            let index_input = get_input(
+                "Import which application? Type 0 for ALL (no more than 10 at a time supported)",
+            );
 
             let index = usize::from_str(&index_input)?;
 
@@ -150,6 +155,7 @@ async fn run(cli: Cli) -> Result {
                 println!("There is no app with index {}", index);
                 Ok(())
             } else {
+                // 0 index is reserved to select all
                 if index == 0 {
                     // You can restrict the OAuth2 token into having access to
                     // 10 items or less. So if we want to support more than 10
@@ -158,7 +164,11 @@ async fn run(cli: Cli) -> Result {
                     if apps.len() > 10 {
                         panic!("Due to TTN Auth limitations, importing more than 10 apps at once not currently supported");
                     }
-                    let token = client.get_app_token(apps.clone()).await?;
+
+                    // the account token is consumed
+                    let token = client
+                        .exchange_for_app_token(account_token, apps.clone())
+                        .await?;
                     for app in &apps {
                         client.get_devices(&app, &token).await?;
                         let devices = client.get_devices(&app, &token).await?;
@@ -166,9 +176,13 @@ async fn run(cli: Cli) -> Result {
                             println!("{:?}", device);
                         }
                     }
+                // you can select one by one
                 } else {
                     let app = apps[index - 1].clone();
-                    let token = client.get_app_token(vec![app.clone()]).await?;
+                    // the account token is consumed
+                    let token = client
+                        .exchange_for_app_token(account_token, vec![app.clone()])
+                        .await?;
                     client.get_devices(&app, &token).await?;
                     let devices = client.get_devices(&app, &token).await?;
                     for device in devices {
