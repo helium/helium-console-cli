@@ -97,7 +97,7 @@ async fn run(cli: Cli) -> Result {
                     dev_eui,
                 } => {
                     let request = GetDevice::from_user_input(app_eui, app_key, dev_eui)?;
-                    println!("{:#?}", client.get_device(request).await?)
+                    println!("{:#?}", client.get_device(&request).await?)
                 }
                 DeviceCmd::GetById { id } => {
                     validate_uuid_input(&id)?;
@@ -111,7 +111,7 @@ async fn run(cli: Cli) -> Result {
                 } => {
                     let new_device =
                         NewDeviceRequest::from_user_input(app_eui, app_key, dev_eui, name)?;
-                    println!("{:#?}", client.post_device(new_device).await?);
+                    println!("{:#?}", client.post_device(&new_device).await?);
                 }
                 DeviceCmd::Delete {
                     app_eui,
@@ -119,7 +119,7 @@ async fn run(cli: Cli) -> Result {
                     dev_eui,
                 } => {
                     let request = GetDevice::from_user_input(app_eui, app_key, dev_eui)?;
-                    let device = client.get_device(request).await?;
+                    let device = client.get_device(&request).await?;
                     client.delete_device(device.id()).await?;
                 }
                 DeviceCmd::DeleteById { id } => {
@@ -184,15 +184,41 @@ async fn run(cli: Cli) -> Result {
                     devices.extend(ttn_client.get_devices(&app, &token).await?);
                 }
 
-
                 let config = config::load(CONF_PATH)?;
                 let client = client::Client::new(config)?;
 
-                for ttn_device in devices {
-                    println!("{:?}", ttn_device);
-                    let request = ttn_device.into_new_device_request()?;
-                    println!("{:#?}", client.post_device(request).await?);
+                let first_answer = get_input(
+                    format!("Import all {} devices? Please type y or n", devices.len()).as_str(),
+                );
+                let input_all =
+                    yes_or_no(first_answer, Some("Import ALL devices? Please type y or n"));
 
+                for ttn_device in devices {
+                    // if user elected to import all
+                    // create_device will always be Yes
+                    let create_device = match input_all {
+                        UserResponse::Yes => UserResponse::Yes,
+                        UserResponse::No => {
+                            let first_answer = get_input(
+                                format!("Import device? {:?}", ttn_device.get_simple_string())
+                                    .as_str(),
+                            );
+                            yes_or_no(first_answer, Some("Please type y or n"))
+                        }
+                    };
+
+                    match create_device {
+                        UserResponse::Yes => {
+                            let request = ttn_device.into_new_device_request()?;
+                            match client.post_device(&request).await {
+                                Ok(data) => println!("Successly Created {:?}", data),
+                                Err(err) => println!("{}", err.description()),
+                            }
+                        }
+                        UserResponse::No => {
+                            println!("Skipping device");
+                        }
+                    }
                 }
                 Ok(())
             }
@@ -207,4 +233,30 @@ fn validate_uuid_input(id: &String) -> Result {
         return Err(Error::InvalidUuid.into());
     }
     Ok(())
+}
+
+enum UserResponse {
+    Yes,
+    No,
+}
+fn yes_or_no(mut answer: String, repeated_prompt: Option<&str>) -> UserResponse {
+    let prompt = if let Some(prompt) = repeated_prompt {
+        prompt
+    } else {
+        ""
+    };
+    loop {
+        match answer.as_str() {
+            "Y" | "y" | "YES" | "Yes" | "yes" => {
+                return UserResponse::Yes;
+            }
+            "N" | "n" | "NO" | "No" | "no" => {
+                return UserResponse::No;
+            }
+            _ => {
+                println!("Please type Yes or No or y or n or whatever");
+                answer = get_input(prompt);
+            }
+        }
+    }
 }

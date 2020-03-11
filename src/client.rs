@@ -63,7 +63,7 @@ impl Client {
         Ok(devices)
     }
 
-    pub async fn get_device(&self, get_device: GetDevice) -> Result<Device> {
+    pub async fn get_device(&self, get_device: &GetDevice) -> Result<Device> {
         // TODO: API will change and app_key will also be used
         let request = self.get(
             format!(
@@ -87,13 +87,16 @@ impl Client {
         Ok(device)
     }
 
-    pub async fn post_device(&self, new_device_request: NewDeviceRequest) -> Result<Device> {
+    pub async fn post_device(&self, new_device_request: &NewDeviceRequest) -> Result<Device> {
         let request = self.post("api/v1/devices")?.json(&new_device_request);
         let response = request.send().await?;
-        let body = response.text().await?;
-        println!("POST DEVICE");
-        let device: Device = serde_json::from_str(&body)?;
-        Ok(device)
+        if response.status() == 201 {
+            let body = response.text().await?;
+            let device: Device = serde_json::from_str(&body)?;
+            Ok(device)
+        } else {
+            Err(Error::NewDevice422.into())
+        }
     }
 
     pub async fn delete_device(&self, id: &String) -> Result<()> {

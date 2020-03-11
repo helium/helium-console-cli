@@ -4,18 +4,15 @@ extern crate rand;
 extern crate url;
 
 use super::config::get_input;
-use super::Result;
 use super::types::NewDeviceRequest;
+use super::Result;
 use oauth2::basic::BasicClient;
 use oauth2::prelude::*;
-use oauth2::{
-    AuthUrl, AuthorizationCode, ClientId, ClientSecret, TokenResponse, TokenUrl,
-};
+use oauth2::AccessToken;
+use oauth2::{AuthUrl, AuthorizationCode, ClientId, ClientSecret, TokenResponse, TokenUrl};
 use reqwest::Client as ReqwestClient;
 use std::time::Duration;
 use url::Url;
-use oauth2::AccessToken;
-
 
 const ACCOUNT_BASE_URL: &str = "https://account.thethingsnetwork.org";
 
@@ -61,34 +58,38 @@ impl Client {
     }
 
     fn get_with_token(&self, token: &str, path: &str) -> reqwest::RequestBuilder {
-        self
-            .client
+        self.client
             .get(format!("{}{}", ACCOUNT_BASE_URL, path).as_str())
             .bearer_auth(token)
     }
 
     fn post_with_token(&self, token: &str, path: &str) -> reqwest::RequestBuilder {
-        self
-            .client
+        self.client
             .post(format!("{}{}", ACCOUNT_BASE_URL, path).as_str())
             .bearer_auth(token)
     }
 
     pub async fn get_apps(&self, token: &AccessToken) -> Result<Vec<App>> {
-        let request = self.get_with_token(&token.secret(), format!("/api/v2/applications").as_str());
+        let request =
+            self.get_with_token(&token.secret(), format!("/api/v2/applications").as_str());
         let response = request.send().await?;
         let body = response.text().await.unwrap();
         let apps: Vec<App> = serde_json::from_str(&body)?;
         Ok(apps)
     }
 
-    pub async fn exchange_for_app_token(&mut self, token: AccessToken, apps: Vec<App>) -> Result<String> {
+    pub async fn exchange_for_app_token(
+        &mut self,
+        token: AccessToken,
+        apps: Vec<App>,
+    ) -> Result<String> {
         let mut token_request = RequestToken { scope: Vec::new() };
 
         for app in apps {
             token_request.scope.push(format!("apps:{}", app.id));
         }
-        let request = self.post_with_token(token.secret(), "/users/restrict-token")
+        let request = self
+            .post_with_token(token.secret(), "/users/restrict-token")
             .json(&token_request);
 
         let response = request.send().await?;
@@ -172,7 +173,6 @@ pub struct Device {
     activation_constraints: String,
 }
 
-
 impl Device {
     pub fn into_new_device_request(self) -> Result<NewDeviceRequest> {
         NewDeviceRequest::from_user_input(
@@ -181,6 +181,13 @@ impl Device {
             self.dev_eui,
             // assign it some unique'ish name
             self.dev_id,
+        )
+    }
+
+    pub fn get_simple_string(&self) -> String {
+        format!(
+            "TtnDevice {{ app_eui: \"{}\", dev_eui: \"{}\", app_id: \"{}\", dev_id: \"{}\"}}",
+            self.app_eui, self.dev_eui, self.app_id, self.dev_id
         )
     }
 }
