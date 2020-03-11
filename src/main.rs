@@ -54,6 +54,12 @@ enum DeviceCmd {
     },
 }
 
+#[derive(StructOpt, Debug)]
+enum TtnCmd {
+    /// Imports devices from TTN Account
+    Import,
+}
+
 /// Interact with Helium API via CLI
 #[derive(Debug, StructOpt)]
 enum Cli {
@@ -62,7 +68,10 @@ enum Cli {
         #[structopt(subcommand)]
         cmd: DeviceCmd,
     },
-    Ttn,
+    Ttn {
+        #[structopt(subcommand)]
+        cmd: TtnCmd,
+    },
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -127,103 +136,14 @@ async fn run(cli: Cli) -> Result {
                     client.delete_device(&id).await?;
                 }
             }
-            Ok(())
         }
-        Cli::Ttn => {
-            println!("Generate a ttnctl access code at https://account.thethingsnetwork.org/");
-            let mut ttn_client = ttn::Client::new()?;
-
-            let account_token = ttn_client.get_account_token()?;
-
-            let apps = ttn_client.get_apps(&account_token).await?;
-
-            let mut table = Table::new();
-            table.add_row(row!["Index", "Name", "ID"]);
-            for (index, app) in apps.iter().enumerate() {
-                table.add_row(row![index + 1, app.name, app.id,]);
+        Cli::Ttn { cmd } => match cmd {
+            TtnCmd::Import => {
+                ttn_import().await?;
             }
-
-            table.printstd();
-
-            let index_input = get_input(
-                "Import which application? Type 0 for ALL (no more than 10 at a time supported)",
-            );
-
-            let index = usize::from_str(&index_input)?;
-
-            if index > apps.len() {
-                println!("There is no app with index {}", index);
-                Ok(())
-            } else {
-                let mut devices = Vec::new();
-                // 0 index is reserved to select all
-                if index == 0 {
-                    // You can restrict the OAuth2 token into having access to
-                    // 10 items or less. So if we want to support more than 10
-                    // applications imported at a time, we will need to ask
-                    // the user for a new token
-                    if apps.len() > 10 {
-                        panic!("Due to TTN Auth limitations, importing more than 10 apps at once not currently supported");
-                    }
-
-                    // the account token is consumed
-                    let token = ttn_client
-                        .exchange_for_app_token(account_token, apps.clone())
-                        .await?;
-                    for app in &apps {
-                        ttn_client.get_devices(&app, &token).await?;
-                        devices.extend(ttn_client.get_devices(&app, &token).await?);
-                    }
-                // you can select one by one
-                } else {
-                    let app = apps[index - 1].clone();
-                    // the account token is consumed
-                    let token = ttn_client
-                        .exchange_for_app_token(account_token, vec![app.clone()])
-                        .await?;
-                    devices.extend(ttn_client.get_devices(&app, &token).await?);
-                }
-
-                let config = config::load(CONF_PATH)?;
-                let client = client::Client::new(config)?;
-
-                let first_answer = get_input(
-                    format!("Import all {} devices? Please type y or n", devices.len()).as_str(),
-                );
-                let input_all =
-                    yes_or_no(first_answer, Some("Import ALL devices? Please type y or n"));
-
-                for ttn_device in devices {
-                    // if user elected to import all
-                    // create_device will always be Yes
-                    let create_device = match input_all {
-                        UserResponse::Yes => UserResponse::Yes,
-                        UserResponse::No => {
-                            let first_answer = get_input(
-                                format!("Import device? {:?}", ttn_device.get_simple_string())
-                                    .as_str(),
-                            );
-                            yes_or_no(first_answer, Some("Please type y or n"))
-                        }
-                    };
-
-                    match create_device {
-                        UserResponse::Yes => {
-                            let request = ttn_device.into_new_device_request()?;
-                            match client.post_device(&request).await {
-                                Ok(data) => println!("Successly Created {:?}", data),
-                                Err(err) => println!("{}", err.description()),
-                            }
-                        }
-                        UserResponse::No => {
-                            println!("Skipping device");
-                        }
-                    }
-                }
-                Ok(())
-            }
-        }
+        },
     }
+    Ok(())
 }
 
 /// Throws an error if UUID isn't properly input
@@ -235,10 +155,101 @@ fn validate_uuid_input(id: &String) -> Result {
     Ok(())
 }
 
+async fn ttn_import() -> Result {
+    println!("Generate a ttnctl access code at https://account.thethingsnetwork.org/");
+    let mut ttn_client = ttn::Client::new()?;
+
+    let account_token = ttn_client.get_account_token()?;
+
+    let apps = ttn_client.get_apps(&account_token).await?;
+
+    let mut table = Table::new();
+    table.add_row(row!["Index", "Name", "ID"]);
+    for (index, app) in apps.iter().enumerate() {
+        table.add_row(row![index + 1, app.name, app.id,]);
+    }
+
+    table.printstd();
+
+    let index_input =
+        get_input("Import which application? Type 0 for ALL (no more than 10 at a time supported)");
+
+    let index = usize::from_str(&index_input)?;
+
+    if index > apps.len() {
+        println!("There is no app with index {}", index);
+    } else {
+        let mut devices = Vec::new();
+        // 0 index is reserved to select all
+        if index == 0 {
+            // You can restrict the OAuth2 token into having access to
+            // 10 items or less. So if we want to support more than 10
+            // applications imported at a time, we will need to ask
+            // the user for a new token
+            if apps.len() > 10 {
+                panic!("Due to TTN Auth limitations, importing more than 10 apps at once not currently supported");
+            }
+
+            // the account token is consumed
+            let token = ttn_client
+                .exchange_for_app_token(account_token, apps.clone())
+                .await?;
+            for app in &apps {
+                ttn_client.get_devices(&app, &token).await?;
+                devices.extend(ttn_client.get_devices(&app, &token).await?);
+            }
+        // you can select one by one
+        } else {
+            let app = apps[index - 1].clone();
+            // the account token is consumed
+            let token = ttn_client
+                .exchange_for_app_token(account_token, vec![app.clone()])
+                .await?;
+            devices.extend(ttn_client.get_devices(&app, &token).await?);
+        }
+
+        let config = config::load(CONF_PATH)?;
+        let client = client::Client::new(config)?;
+
+        let first_answer =
+            get_input(format!("Import all {} devices? Please type y or n", devices.len()).as_str());
+        let input_all = yes_or_no(first_answer, Some("Import ALL devices? Please type y or n"));
+
+        for ttn_device in devices {
+            // if user elected to import all
+            // create_device will always be Yes
+            let create_device = match input_all {
+                UserResponse::Yes => UserResponse::Yes,
+                UserResponse::No => {
+                    let first_answer = get_input(
+                        format!("Import device? {:?}", ttn_device.get_simple_string()).as_str(),
+                    );
+                    yes_or_no(first_answer, Some("Please type y or n"))
+                }
+            };
+
+            match create_device {
+                UserResponse::Yes => {
+                    let request = ttn_device.into_new_device_request()?;
+                    match client.post_device(&request).await {
+                        Ok(data) => println!("Successly Created {:?}", data),
+                        Err(err) => println!("{}", err.description()),
+                    }
+                }
+                UserResponse::No => {
+                    println!("Skipping device");
+                }
+            }
+        }
+    }
+    Ok(())
+}
+
 enum UserResponse {
     Yes,
     No,
 }
+
 fn yes_or_no(mut answer: String, repeated_prompt: Option<&str>) -> UserResponse {
     let prompt = if let Some(prompt) = repeated_prompt {
         prompt
