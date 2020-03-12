@@ -406,7 +406,7 @@ dependencies = [
 
 [[package]]
 name = "helium-console-cli"
-version = "0.1.4"
+version = "0.1.5"
 dependencies = [
  "base64 0.11.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "hex 0.4.2 (registry+https://github.com/rust-lang/crates.io-index)",
