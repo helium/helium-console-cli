@@ -33,11 +33,6 @@ matrix:
     before_script:
       - rustup target add $TARGET
     script: cargo build --release --target $TARGET --locked
-    addons:
-      apt:
-        packages:
-          - musl-tools
-          - libssl-dev
     <<: *DEPLOY_TO_GITHUB
 
   - name: macOS Binary
@@ -45,7 +40,6 @@ matrix:
     os: osx
     rust: stable
     script: cargo build --release --target $TARGET --locked
-    install: true
     <<: *DEPLOY_TO_GITHUB
 
   - name: Windows Binary
