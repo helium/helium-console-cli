@@ -133,6 +133,15 @@ pub struct Label {
     name: String,
 }
 
+impl Label {
+    pub fn id(&self) -> &String {
+        &self.id
+    }
+    pub fn name(&self) -> &String {
+        &self.name
+    }
+}
+
 #[derive(Clone, Deserialize, Serialize, Debug)]
 pub struct DeviceLabel {
     device: String,

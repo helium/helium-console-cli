@@ -98,7 +98,7 @@ impl Client {
         Ok(token_response.access_token)
     }
 
-    pub async fn get_devices(&self, app: &App, token: &String) -> Result<Vec<Device>> {
+    pub async fn get_devices(&self, app: &App, token: &String) -> Result<Vec<TtnDevice>> {
         // We brute force going through handler URLs
         for url in &APP_BASE_URL {
             let request = self
@@ -111,12 +111,7 @@ impl Client {
             if response.status() == 200 {
                 let body = response.text().await.unwrap();
                 let devices: Devices = serde_json::from_str(&body)?;
-
-                let mut ret = Vec::new();
-                for device in devices.devices {
-                    ret.push(device.lorawan_device)
-                }
-                return Ok(ret);
+                return Ok(devices.devices);
             }
         }
         Err(Error::NoHandler.into())
@@ -153,7 +148,7 @@ struct Devices {
 }
 
 #[derive(Clone, Deserialize, Serialize, Debug)]
-struct TtnDevice {
+pub struct TtnDevice {
     app_id: String,
     dev_id: String,
     lorawan_device: Device,
@@ -173,21 +168,25 @@ pub struct Device {
     activation_constraints: String,
 }
 
-impl Device {
+impl TtnDevice {
     pub fn into_new_device_request(self) -> Result<NewDeviceRequest> {
         NewDeviceRequest::from_user_input(
-            self.app_eui,
-            self.app_key,
-            self.dev_eui,
+            self.lorawan_device.app_eui,
+            self.lorawan_device.app_key,
+            self.lorawan_device.dev_eui,
             // assign it some unique'ish name
-            self.dev_id,
+            self.lorawan_device.dev_id,
         )
+    }
+
+    pub fn appid(&self) -> &String {
+        &self.app_id
     }
 
     pub fn get_simple_string(&self) -> String {
         format!(
-            "TtnDevice {{ app_eui: \"{}\", dev_eui: \"{}\", app_id: \"{}\", dev_id: \"{}\"}}",
-            self.app_eui, self.dev_eui, self.app_id, self.dev_id
+            "TtnDevice {{ app_eui: \"{}\", dev_eui: \"{}\", app_id: \"{}\", dev_id: \"{}\", app_id: \"{}\"}}",
+            self.lorawan_device.app_eui, self.lorawan_device.dev_eui, self.lorawan_device.app_id, self.lorawan_device.dev_id, self.app_id
         )
     }
 }

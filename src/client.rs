@@ -3,6 +3,7 @@ use super::Config;
 use super::Result;
 use base64;
 use reqwest::Client as ReqwestClient;
+use std::collections::HashMap;
 use std::time::Duration;
 
 #[derive(Clone, Debug)]
@@ -10,6 +11,8 @@ pub struct Client {
     base_url: String,
     key: String,
     client: ReqwestClient,
+    // map label to uuid
+    labels: HashMap<String, String>,
 }
 
 impl Client {
@@ -31,6 +34,7 @@ impl Client {
             base_url: config.base_url.clone(),
             key: config.key.clone(),
             client,
+            labels: HashMap::new(),
         })
     }
 
@@ -114,11 +118,15 @@ impl Client {
     }
 
     /// Labels
-    pub async fn get_labels(&self) -> Result<Vec<Label>> {
+    pub async fn get_labels(&mut self) -> Result<Vec<Label>> {
         let request = self.get("api/v1/labels")?;
         let response = request.send().await?;
         let body = response.text().await.unwrap();
         let labels: Vec<Label> = serde_json::from_str(&body)?;
+
+        for label in &labels {
+            self.labels.insert(label.name().clone(), label.id().clone());
+        }
         Ok(labels)
     }
 
@@ -175,5 +183,23 @@ impl Client {
             println!("Device label not found. Delete failed.");
         }
         Ok(())
+    }
+
+    pub async fn get_label_uuid(&mut self, device_label: &String) -> Result<String> {
+        // we probably haven't fetched labels if length is 0
+        if self.labels.len() == 0 {
+            self.get_labels().await?;
+        }
+
+        // if the uuid still doesn't exist even after an intial fetch
+        // create it
+        if !self.labels.contains_key(device_label) {
+            let request = NewLabelRequest::from_string(device_label);
+            let label = self.post_label(&request).await?;
+            self.labels.insert(label.name().clone(), label.id().clone());
+        }
+
+        // at this point, the above either errored or the label exists
+        Ok(self.labels[device_label].clone())
     }
 }

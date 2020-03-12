@@ -115,7 +115,7 @@ async fn run(cli: Cli) -> Result {
         }
         Cli::Label { cmd } => {
             let config = config::load(CONF_PATH)?;
-            let client = client::Client::new(config)?;
+            let mut client = client::Client::new(config)?;
 
             match cmd {
                 LabelCmd::List => println!("{:#?}", client.get_labels().await?),
@@ -201,7 +201,7 @@ async fn ttn_import() -> Result {
         }
 
         let config = config::load(CONF_PATH)?;
-        let client = client::Client::new(config)?;
+        let mut client = client::Client::new(config)?;
 
         let first_answer =
             get_input(format!("Import all {} devices at once? Otherwise, proceed with device by device import. Please type y or n", devices.len()).as_str());
@@ -240,10 +240,11 @@ async fn ttn_import() -> Result {
 
             match create_device {
                 UserResponse::Yes => {
+                    let appid = ttn_device.appid().clone();
                     let request = ttn_device.into_new_device_request()?;
                     match client.post_device(&request).await {
-                        Ok(data) => {
-                            println!("Successly Created {:?}", data);
+                        Ok(device) => {
+                            println!("Successly Created {:?}", device);
                             let confirm = match do_label {
                                 UserResponse::Yes => true,
                                 UserResponse::No => false,
@@ -262,7 +263,11 @@ async fn ttn_import() -> Result {
                                 }
                             };
                             if confirm {
-                                //add label
+                                println!("Adding label to device {}", appid);
+                                let label_uuid = client.get_label_uuid(&appid).await?;
+                                let device_label =
+                                    DeviceLabel::from_uuids(device.id().to_string(), label_uuid)?;
+                                client.add_device_label(&device_label).await?;
                             }
                         }
                         Err(err) => println!("{}", err.description()),
