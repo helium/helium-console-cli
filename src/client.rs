@@ -70,7 +70,7 @@ impl Client {
     pub async fn get_device(&self, get_device: &GetDevice) -> Result<Device> {
         let request = self.get(
             format!(
-                "api/v1/devices?dev_eui={}&app_eui={}&app_eui={}",
+                "api/v1/devices?dev_eui={}&app_eui={}&app_key={}",
                 get_device.dev_eui(),
                 get_device.app_eui(),
                 get_device.app_key()
@@ -79,6 +79,7 @@ impl Client {
         )?;
         let response = request.send().await?;
         let body = response.text().await.unwrap();
+
         let devices: Device = serde_json::from_str(&body)?;
         Ok(devices)
     }
@@ -160,8 +161,6 @@ impl Client {
     pub async fn add_device_label(&self, device_label: &DeviceLabel) -> Result<()> {
         let request = self.post("api/v1/devices_labels")?.json(&device_label);
         let response = request.send().await?;
-        println!("Response status {:?}", response.status());
-
         if response.status() == 201 || response.status() == 200 {
             let body = response.text().await?;
             println!("{}", body);
@@ -186,6 +185,9 @@ impl Client {
     }
 
     pub async fn get_label_uuid(&mut self, device_label: &String) -> Result<String> {
+
+        let label_upper = device_label.clone().to_uppercase();
+
         // we probably haven't fetched labels if length is 0
         if self.labels.len() == 0 {
             self.get_labels().await?;
@@ -193,13 +195,19 @@ impl Client {
 
         // if the uuid still doesn't exist even after an intial fetch
         // create it
-        if !self.labels.contains_key(device_label) {
-            let request = NewLabelRequest::from_string(device_label);
+        println!("{:?}", self.labels);
+
+        if !self.labels.contains_key(&label_upper) {
+            println!("Label does not exist. Creating label");
+            let request = NewLabelRequest::from_string(&label_upper);
             let label = self.post_label(&request).await?;
             self.labels.insert(label.name().clone(), label.id().clone());
         }
-
         // at this point, the above either errored or the label exists
-        Ok(self.labels[device_label].clone())
+        if let Some(id) = self.labels.get(&label_upper) {
+            Ok(id.clone())
+        } else {
+            panic!("WAH")
+        }
     }
 }

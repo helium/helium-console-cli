@@ -105,6 +105,18 @@ impl NewDeviceRequest {
             },
         })
     }
+
+    pub fn app_eui(&self) -> &String {
+        &self.device.app_eui
+    }
+
+    pub fn app_key(&self) -> &String {
+        &self.device.app_key
+    }
+
+    pub fn dev_eui(&self) -> &String {
+        &self.device.dev_eui
+    }
 }
 
 #[derive(Clone, Deserialize, Serialize, Debug)]

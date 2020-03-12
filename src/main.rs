@@ -242,35 +242,56 @@ async fn ttn_import() -> Result {
                 UserResponse::Yes => {
                     let appid = ttn_device.appid().clone();
                     let request = ttn_device.into_new_device_request()?;
-                    match client.post_device(&request).await {
+
+                    let device = match client.post_device(&request).await {
                         Ok(device) => {
                             println!("Successly Created {:?}", device);
-                            let confirm = match do_label {
-                                UserResponse::Yes => true,
-                                UserResponse::No => false,
-                                UserResponse::Maybe => {
-                                    let first_answer =
-                                        get_input(format!("Add label to created device?").as_str());
-                                    let answer =
-                                        yes_or_no(first_answer, Some("Please type y or n"));
-                                    match answer {
-                                        UserResponse::Yes => true,
-                                        UserResponse::No => false,
-                                        UserResponse::Maybe => {
-                                            panic!("Maybe should not occur happen here")
-                                        }
+                            Some(device)
+                        }
+                        Err(err) => {
+                            println!("{}", err.description());
+                            if let Some(error) = err.downcast_ref::<Error>() {
+                                match error {
+                                    Error::NewDevice422 => {
+                                        let request = GetDevice::from_user_input(
+                                            request.app_eui().clone(),
+                                            request.app_key().clone(),
+                                            request.dev_eui().clone(),
+                                        )?;
+                                        Some(client.get_device(&request).await?)
                                     }
+                                    _ => None,
                                 }
-                            };
-                            if confirm {
-                                println!("Adding label to device {}", appid);
-                                let label_uuid = client.get_label_uuid(&appid).await?;
-                                let device_label =
-                                    DeviceLabel::from_uuids(device.id().to_string(), label_uuid)?;
-                                client.add_device_label(&device_label).await?;
+                            } else {
+                                None
                             }
                         }
-                        Err(err) => println!("{}", err.description()),
+                    };
+
+                    if let Some(device) = device {
+                        let confirm = match do_label {
+                            UserResponse::Yes => true,
+                            UserResponse::No => false,
+                            UserResponse::Maybe => {
+                                let first_answer =
+                                    get_input(format!("Add label to device?").as_str());
+                                let answer = yes_or_no(first_answer, Some("Please type y or n"));
+                                match answer {
+                                    UserResponse::Yes => true,
+                                    UserResponse::No => false,
+                                    UserResponse::Maybe => {
+                                        panic!("Maybe should not occur here")
+                                    }
+                                }
+                            }
+                        };
+                        if confirm {
+                            println!("Adding label to device {}", appid);
+                            let label_uuid = client.get_label_uuid(&appid).await?;
+                            let device_label =
+                                DeviceLabel::from_uuids(device.id().to_string(), label_uuid)?;
+                            client.add_device_label(&device_label).await?;
+                        }
                     }
                 }
                 UserResponse::No => {
