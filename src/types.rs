@@ -23,6 +23,7 @@ pub struct GetDevice {
     app_key: String,
     dev_eui: String,
 }
+
 impl GetDevice {
     pub fn from_user_input(app_eui: String, app_key: String, dev_eui: String) -> Result<GetDevice> {
         let app_eui_decoded = hex::decode(app_eui.clone())?;
@@ -104,6 +105,69 @@ impl NewDeviceRequest {
             },
         })
     }
+
+    pub fn app_eui(&self) -> &String {
+        &self.device.app_eui
+    }
+
+    pub fn app_key(&self) -> &String {
+        &self.device.app_key
+    }
+
+    pub fn dev_eui(&self) -> &String {
+        &self.device.dev_eui
+    }
+}
+
+#[derive(Clone, Deserialize, Serialize, Debug)]
+pub struct NewLabelRequest {
+    label: LabelRequest,
+}
+
+impl NewLabelRequest {
+    pub fn from_string(string: &String) -> NewLabelRequest {
+        NewLabelRequest {
+            label: LabelRequest {
+                name: string.clone(),
+            },
+        }
+    }
+}
+
+#[derive(Clone, Deserialize, Serialize, Debug)]
+pub struct LabelRequest {
+    name: String,
+}
+
+#[derive(Clone, Deserialize, Serialize, Debug)]
+pub struct Label {
+    id: String,
+    name: String,
+}
+
+impl Label {
+    pub fn id(&self) -> &String {
+        &self.id
+    }
+    pub fn name(&self) -> &String {
+        &self.name
+    }
+}
+
+#[derive(Clone, Deserialize, Serialize, Debug)]
+pub struct DeviceLabel {
+    device: String,
+    label: String,
+}
+
+use super::validate_uuid_input;
+
+impl DeviceLabel {
+    pub fn from_uuids(device: String, label: String) -> Result<DeviceLabel> {
+        validate_uuid_input(&device)?;
+        validate_uuid_input(&label)?;
+        Ok(DeviceLabel { device, label })
+    }
 }
 
 use std::error::Error as stdError;
@@ -117,6 +181,10 @@ pub enum Error {
     InvalidApiKey,
     InvalidUuid,
     NewDevice422,
+    NewDeviceApi,
+    NewLabel422,
+    NewLabelApi,
+    NewDeviceLabelApi,
 }
 
 impl fmt::Display for Error {
@@ -140,6 +208,20 @@ impl fmt::Display for Error {
             Error::NewDevice422 => {
                 write!(f, "Failed Creating Device! Device with identical credentials already exists")
             }
+            Error::NewDeviceApi => {
+                write!(f, "Failed Creating Device! Unknown server error")
+            }
+            Error::NewLabel422 => {
+                write!(f, "Failed Creating Label! Label with same name already exists under organization")
+            }
+            Error::NewLabelApi => {
+                write!(f, "Failed Creating Label! Unknown server error")
+            }
+            Error::NewDeviceLabelApi => {
+                write!(f, "Failed Creating Device Label! Unknown server error")
+            }
+
+
         }
     }
 }
@@ -153,6 +235,10 @@ impl stdError for Error {
             Error::InvalidApiKey => "Invalid Api Key. Must be 32 bytes represented in base64",
             Error::InvalidUuid => "Invalid UUID input. Expected in hyphenated form \"00000000-0000-0000-0000-000000000000\"",
             Error::NewDevice422 => "Failed Creating Device! Device with identical credentials already exists",
+            Error::NewDeviceApi => "Failed Creating Device! Unknown server error", 
+            Error::NewLabel422 => "Failed Creating Label! Label with same name already exists under organization",
+            Error::NewLabelApi => "Failed Creating Label! Unknown server error",
+            Error::NewDeviceLabelApi => "Failed Creating Device Label! Unknown server error",
         }
     }
 

@@ -37,6 +37,11 @@ pub enum Cli {
         #[structopt(subcommand)]
         cmd: DeviceCmd,
     },
+    /// List, create, and delete labels
+    Label {
+        #[structopt(subcommand)]
+        cmd: LabelCmd,
+    },
     /// Import devices from TTN to Helium
     Ttn {
         #[structopt(subcommand)]
@@ -98,6 +103,30 @@ async fn run(cli: Cli) -> Result {
                     validate_uuid_input(&id)?;
                     client.delete_device(&id).await?;
                 }
+                DeviceCmd::AddLabel { device, label } => {
+                    let device_label = DeviceLabel::from_uuids(device, label)?;
+                    client.add_device_label(&device_label).await?;
+                }
+                DeviceCmd::RemoveLabel { device, label } => {
+                    let device_label = DeviceLabel::from_uuids(device, label)?;
+                    client.remove_device_label(&device_label).await?;
+                }
+            }
+        }
+        Cli::Label { cmd } => {
+            let config = config::load(CONF_PATH)?;
+            let mut client = client::Client::new(config)?;
+
+            match cmd {
+                LabelCmd::List => println!("{:#?}", client.get_labels().await?),
+                LabelCmd::Create { name } => {
+                    let request = NewLabelRequest::from_string(&name);
+                    println!("{:#?}", client.post_label(&request).await?);
+                }
+                LabelCmd::DeleteById { id } => {
+                    validate_uuid_input(&id)?;
+                    client.delete_label(&id).await?;
+                }
             }
         }
         Cli::Ttn { cmd } => match cmd {
@@ -110,7 +139,7 @@ async fn run(cli: Cli) -> Result {
 }
 
 /// Throws an error if UUID isn't properly input
-fn validate_uuid_input(id: &String) -> Result {
+pub fn validate_uuid_input(id: &String) -> Result {
     if let Err(err) = uuid::Uuid::parse_str(id.as_str()) {
         println!("{} [input: {}]", err, id);
         return Err(Error::InvalidUuid.into());
@@ -172,11 +201,28 @@ async fn ttn_import() -> Result {
         }
 
         let config = config::load(CONF_PATH)?;
-        let client = client::Client::new(config)?;
+        let mut client = client::Client::new(config)?;
 
         let first_answer =
             get_input(format!("Import all {} devices at once? Otherwise, proceed with device by device import. Please type y or n", devices.len()).as_str());
         let input_all = yes_or_no(first_answer, Some("Import ALL devices? Please type y or n"));
+        let first_answer =
+            get_input("Apply TTN application ID as Label to ALL devices? Please type y or n");
+        let label_all = yes_or_no(first_answer, Some(" Please type y or n"));
+
+        let do_label = if UserResponse::No == label_all {
+            let first_answer =
+                get_input("Skip applying TTN application ID as Label to ALL devices? Otherwise, proceed with device by device approval. Please type y or n");
+            let dont_label_all = yes_or_no(first_answer, Some(" Please type y or n"));
+
+            match dont_label_all {
+                UserResponse::No => UserResponse::Maybe,
+                UserResponse::Yes => UserResponse::No,
+                UserResponse::Maybe => panic!("maybe not valid here"),
+            }
+        } else {
+            UserResponse::Yes
+        };
 
         for ttn_device in devices {
             // if user elected to import all
@@ -189,28 +235,80 @@ async fn ttn_import() -> Result {
                     );
                     yes_or_no(first_answer, Some("Please type y or n"))
                 }
+                UserResponse::Maybe => panic!("User reponse for create device must be yes or no"),
             };
 
             match create_device {
                 UserResponse::Yes => {
+                    let appid = ttn_device.appid().clone();
                     let request = ttn_device.into_new_device_request()?;
-                    match client.post_device(&request).await {
-                        Ok(data) => println!("Successly Created {:?}", data),
-                        Err(err) => println!("{}", err.description()),
+
+                    let device = match client.post_device(&request).await {
+                        Ok(device) => {
+                            println!("Successly Created {:?}", device);
+                            Some(device)
+                        }
+                        Err(err) => {
+                            println!("{}", err.description());
+                            if let Some(error) = err.downcast_ref::<Error>() {
+                                match error {
+                                    Error::NewDevice422 => {
+                                        let request = GetDevice::from_user_input(
+                                            request.app_eui().clone(),
+                                            request.app_key().clone(),
+                                            request.dev_eui().clone(),
+                                        )?;
+                                        Some(client.get_device(&request).await?)
+                                    }
+                                    _ => None,
+                                }
+                            } else {
+                                None
+                            }
+                        }
+                    };
+
+                    if let Some(device) = device {
+                        let confirm = match do_label {
+                            UserResponse::Yes => true,
+                            UserResponse::No => false,
+                            UserResponse::Maybe => {
+                                let first_answer =
+                                    get_input(format!("Add label to device?").as_str());
+                                let answer = yes_or_no(first_answer, Some("Please type y or n"));
+                                match answer {
+                                    UserResponse::Yes => true,
+                                    UserResponse::No => false,
+                                    UserResponse::Maybe => {
+                                        panic!("Maybe should not occur here")
+                                    }
+                                }
+                            }
+                        };
+                        if confirm {
+                            println!("Adding label to device {}", appid);
+                            let label_uuid = client.get_label_uuid(&appid).await?;
+                            let device_label =
+                                DeviceLabel::from_uuids(device.id().to_string(), label_uuid)?;
+                            client.add_device_label(&device_label).await?;
+                        }
                     }
                 }
                 UserResponse::No => {
                     println!("Skipping device");
                 }
+                UserResponse::Maybe => panic!("User reponse for create device must be yes or no"),
             }
         }
     }
     Ok(())
 }
 
+#[derive(PartialEq)]
 enum UserResponse {
     Yes,
     No,
+    Maybe,
 }
 
 fn yes_or_no(mut answer: String, repeated_prompt: Option<&str>) -> UserResponse {
