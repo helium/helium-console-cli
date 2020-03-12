@@ -195,10 +195,8 @@ impl Client {
 
         // if the uuid still doesn't exist even after an intial fetch
         // create it
-        println!("{:?}", self.labels);
-
         if !self.labels.contains_key(&label_upper) {
-            println!("Label does not exist. Creating label");
+            println!("Label does not exist. Creating label: {}", label_upper);
             let request = NewLabelRequest::from_string(&label_upper);
             let label = self.post_label(&request).await?;
             self.labels.insert(label.name().clone(), label.id().clone());
@@ -207,7 +205,7 @@ impl Client {
         if let Some(id) = self.labels.get(&label_upper) {
             Ok(id.clone())
         } else {
-            panic!("WAH")
+            panic!("Label should exist here. Error out.")
         }
     }
 }
