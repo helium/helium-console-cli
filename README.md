@@ -104,11 +104,11 @@ To start an import session, use the ttn import command:
 helium-console-cli ttn import
 ```
 
-You will be prompted for a ttnctl access code, which you can generate by clicking on `ttnctl access code` [here](https://account.thethingsnetwork.org/). This single-use access code is valid for 5 minutes. During this time the CLI may use the code to request an OAuth2 token which expires after 60 minutes.
+You will be prompted for a ttnctl access code, which you can generate by clicking on `ttnctl access code` [here](https://account.thethingsnetwork.org/). This single-use access code is valid for 5 minutes. During this time the CLI may use the code to request an OAuth2 token; it expires after 60 minutes.
 
 The CLI's prompts will help you:
 * select to import from a single application or all applications (maximum 10, otherwise the OAuth2 token is "used up")
 * you may import all the devices at once or you may approve device import one by one.
 * you may use the TTN App ID as an automatic label for every device or you may approve device labelling one by one
 
-The import process tolerate attempts to re-import or re-label the same device. As such, you may re-run the script to label devices with the TTN App ID even if you already imported the devices during a previous session.
+The import process tolerates attempts to re-import or re-label the same device. As such, you may re-run the script to label devices with the TTN App ID even if you already imported the devices during a previous session.
