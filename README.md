@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.com/helium/helium-console-cli.svg?token=35YrBmyVB8LNrXzjrRop&branch=master)](https://travis-ci.com/helium/helium-console-cli)
+[![Build Status](https://travis-ci.com/helium/helium-console-cli.svg?branch=master)](https://travis-ci.com/helium/helium-console-cli)
 
 # Helium Console CLI
 
