@@ -69,9 +69,4 @@ impl stdError for Error {
             Error::NewDeviceLabelApi => "Failed Creating Device Label! Unknown server error",
         }
     }
-
-    fn cause(&self) -> Option<&dyn stdError> {
-        // Generic error, underlying cause isn't tracked.
-        None
-    }
 }
