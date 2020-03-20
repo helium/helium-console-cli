@@ -1,0 +1,17 @@
+[package]
+name = "helium-console"
+version = "0.1.5"
+authors = ["Louis Thiery <louis@helium.com>"]
+edition = "2018"
+
+[lib]
+path = "lib.rs"
+
+[dependencies]
+reqwest = { version = "0.10", features = ["json"] }
+serde =  "1"
+serde_derive = "1"
+serde_json = "1"
+hex = "0.4"
+base64 = "0.11"
+uuid = "0.8"

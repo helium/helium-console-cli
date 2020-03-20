@@ -1,10 +1,8 @@
 extern crate base64;
 extern crate oauth2;
-extern crate rand;
 extern crate url;
 
 use super::config::get_input;
-use super::types::NewDeviceRequest;
 use super::Result;
 use oauth2::basic::BasicClient;
 use oauth2::prelude::*;
@@ -13,6 +11,7 @@ use oauth2::{AuthUrl, AuthorizationCode, ClientId, ClientSecret, TokenResponse, 
 use reqwest::Client as ReqwestClient;
 use std::time::Duration;
 use url::Url;
+use helium_console::NewDeviceRequest;
 
 const ACCOUNT_BASE_URL: &str = "https://account.thethingsnetwork.org";
 
