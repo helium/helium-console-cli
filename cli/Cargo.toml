@@ -5,7 +5,7 @@ authors = ["Louis Thiery <louis@helium.com>"]
 edition = "2018"
 
 [[bin]]
-name = "tracker"
+name = "helium-console-cli"
 path = "main.rs"
 
 [dependencies]
