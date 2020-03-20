@@ -134,10 +134,10 @@ pub struct NewLabelRequest {
 }
 
 impl NewLabelRequest {
-    pub fn from_string(string: &String) -> NewLabelRequest {
+    pub fn from_string(string: &str) -> NewLabelRequest {
         NewLabelRequest {
             label: LabelRequest {
-                name: string.clone(),
+                name: string.to_owned(),
             },
         }
     }
@@ -178,8 +178,8 @@ impl DeviceLabel {
 }
 
 /// Throws an error if UUID isn't properly input
-pub fn validate_uuid_input(id: &String) -> Result {
-    if let Err(err) = uuid::Uuid::parse_str(id.as_str()) {
+pub fn validate_uuid_input(id: &str) -> Result {
+    if let Err(err) = uuid::Uuid::parse_str(id) {
         println!("{} [input: {}]", err, id);
         return Err(Error::InvalidUuid.into());
     }
