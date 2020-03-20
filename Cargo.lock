@@ -463,18 +463,10 @@ version = "0.1.5"
 dependencies = [
  "base64 0.11.0",
  "hex",
- "hyper",
- "oauth2",
- "prettytable-rs",
- "rand 0.7.3",
  "reqwest",
  "serde",
  "serde_derive",
  "serde_json",
- "structopt",
- "tokio",
- "toml",
- "url 1.7.2",
  "uuid",
 ]
 
@@ -484,11 +476,8 @@ version = "0.1.5"
 dependencies = [
  "base64 0.11.0",
  "helium-console",
- "hex",
- "hyper",
  "oauth2",
  "prettytable-rs",
- "rand 0.7.3",
  "reqwest",
  "serde",
  "serde_derive",
@@ -497,7 +486,6 @@ dependencies = [
  "tokio",
  "toml",
  "url 1.7.2",
- "uuid",
 ]
 
 [[package]]
