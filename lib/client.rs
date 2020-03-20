@@ -1,5 +1,3 @@
-use super::Error;
-use super::Result;
 use super::*;
 use base64;
 use reqwest::Client as ReqwestClient;

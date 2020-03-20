@@ -1,5 +1,5 @@
 use prettytable::{cell, row, Table};
-use std::process;
+use std::{process, str::FromStr};
 use structopt::StructOpt;
 
 pub type Result<T = ()> = std::result::Result<T, Box<dyn std::error::Error>>;
@@ -12,7 +12,6 @@ mod ttn;
 use clicmd::*;
 use config::get_input;
 use helium_console::*;
-use std::str::FromStr;
 
 /// Interact with Helium API via CLI
 #[derive(StructOpt, Debug)]

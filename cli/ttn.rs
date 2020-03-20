@@ -1,10 +1,11 @@
 use super::config::get_input;
 use super::Result;
 use helium_console::NewDeviceRequest;
-use oauth2::basic::BasicClient;
-use oauth2::prelude::*;
-use oauth2::AccessToken;
-use oauth2::{AuthUrl, AuthorizationCode, ClientId, ClientSecret, TokenResponse, TokenUrl};
+use oauth2::{
+    basic::BasicClient,
+    prelude::{NewType, SecretNewType},
+    AccessToken, AuthUrl, AuthorizationCode, ClientId, ClientSecret, TokenResponse, TokenUrl,
+};
 use reqwest::Client as ReqwestClient;
 use serde_derive::{Deserialize, Serialize};
 use std::time::Duration;

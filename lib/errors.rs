@@ -1,4 +1,3 @@
-use std::error::Error as stdError;
 use std::{fmt, str};
 
 #[derive(Debug, Clone)]
@@ -54,7 +53,7 @@ impl fmt::Display for Error {
     }
 }
 
-impl stdError for Error {
+impl ::std::error::Error for Error {
     fn description(&self) -> &str {
         match self {
             Error::InvalidAppEui => "Invalid AppEui input. Must be 8 bytes represented in hex (\"0123456789ABCDEF\")",
