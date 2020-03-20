@@ -1,9 +1,10 @@
-use super::Error;
-use super::Result;
+use super::{Error, Result};
 use helium_console::client::Config;
-use std::fs;
-use std::io::{stdin, Write};
-use std::path::Path;
+use std::{
+    fs,
+    io::{stdin, Write},
+    path::Path,
+};
 use toml;
 
 pub fn get_input(prompt: &str) -> String {

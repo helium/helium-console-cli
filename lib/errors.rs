@@ -1,4 +1,3 @@
-use std::error::Error as stdError;
 use std::{fmt, str};
 
 #[derive(Debug, Clone)]
@@ -17,44 +16,43 @@ pub enum Error {
 
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
+        let msg = match self {
             Error::InvalidAppEui => {
-                write!(f, "Invalid AppEui input. Must be 8 bytes represented in hex (\"0123456789ABCDEF\")")
+                "Invalid AppEui input. Must be 8 bytes represented in hex (\"0123456789ABCDEF\")"
             }
             Error::InvalidAppKey => {
-                write!(f, "Invalid AppKey input. Must be 16 bytes represented in hex (\"0123456789ABCDEF0123456789ABCDEF\")")
+                "Invalid AppKey input. Must be 16 bytes represented in hex (\"0123456789ABCDEF0123456789ABCDEF\")"
             }
             Error::InvalidDevEui => {
-                write!(f, "Invalid DevEui input. Must be 8 bytes represented in hex (\"0123456789ABCDEF\")")
+                "Invalid DevEui input. Must be 8 bytes represented in hex (\"0123456789ABCDEF\")"
             }
             Error::InvalidApiKey => {
-                write!(f, "Invalid Api Key. Must be 32 bytes represented in base64")
+                "Invalid Api Key. Must be 32 bytes represented in base64"
             }
             Error::InvalidUuid => {
-                write!(f, "Invalid UUID input. Expected in hyphenated form \"00000000-0000-0000-0000-000000000000\"")
+                "Invalid UUID input. Expected in hyphenated form \"00000000-0000-0000-0000-000000000000\""
             }
             Error::NewDevice422 => {
-                write!(f, "Failed Creating Device! Device with identical credentials already exists")
+                "Failed Creating Device! Device with identical credentials already exists"
             }
             Error::NewDeviceApi => {
-                write!(f, "Failed Creating Device! Unknown server error")
+                "Failed Creating Device! Unknown server error"
             }
             Error::NewLabel422 => {
-                write!(f, "Failed Creating Label! Label with same name already exists under organization")
+                "Failed Creating Label! Label with same name already exists under organization"
             }
             Error::NewLabelApi => {
-                write!(f, "Failed Creating Label! Unknown server error")
+                "Failed Creating Label! Unknown server error"
             }
             Error::NewDeviceLabelApi => {
-                write!(f, "Failed Creating Device Label! Unknown server error")
+                "Failed Creating Device Label! Unknown server error"
             }
-
-
-        }
+        };
+        write!(f, "{}", msg)
     }
 }
 
-impl stdError for Error {
+impl ::std::error::Error for Error {
     fn description(&self) -> &str {
         match self {
             Error::InvalidAppEui => "Invalid AppEui input. Must be 8 bytes represented in hex (\"0123456789ABCDEF\")",
@@ -63,7 +61,7 @@ impl stdError for Error {
             Error::InvalidApiKey => "Invalid Api Key. Must be 32 bytes represented in base64",
             Error::InvalidUuid => "Invalid UUID input. Expected in hyphenated form \"00000000-0000-0000-0000-000000000000\"",
             Error::NewDevice422 => "Failed Creating Device! Device with identical credentials already exists",
-            Error::NewDeviceApi => "Failed Creating Device! Unknown server error", 
+            Error::NewDeviceApi => "Failed Creating Device! Unknown server error",
             Error::NewLabel422 => "Failed Creating Label! Label with same name already exists under organization",
             Error::NewLabelApi => "Failed Creating Label! Unknown server error",
             Error::NewDeviceLabelApi => "Failed Creating Device Label! Unknown server error",

@@ -1,5 +1,3 @@
-use super::Error;
-use super::Result;
 use super::*;
 use base64;
 use reqwest::Client as ReqwestClient;
@@ -52,7 +50,7 @@ impl Client {
 
         Ok(Client {
             base_url: config.base_url.clone(),
-            key: config.key.clone(),
+            key: config.key,
             client,
             labels: HashMap::new(),
         })
@@ -104,7 +102,7 @@ impl Client {
         Ok(devices)
     }
 
-    pub async fn get_device_by_id(&self, id: &String) -> Result<Device> {
+    pub async fn get_device_by_id(&self, id: &str) -> Result<Device> {
         let request = self.get(format!("api/v1/devices/{}", id).as_str())?;
         let response = request.send().await?;
         let body = response.text().await.unwrap();
@@ -126,7 +124,7 @@ impl Client {
         }
     }
 
-    pub async fn delete_device(&self, id: &String) -> Result<()> {
+    pub async fn delete_device(&self, id: &str) -> Result<()> {
         let request = self.delete(format!("api/v1/devices/{}", id).as_str())?;
         let response = request.send().await?;
         if response.status() == 200 {
@@ -165,7 +163,7 @@ impl Client {
         }
     }
 
-    pub async fn delete_label(&self, id: &String) -> Result<()> {
+    pub async fn delete_label(&self, id: &str) -> Result<()> {
         let request = self.delete(format!("api/v1/labels/{}", id).as_str())?;
         let response = request.send().await?;
         if response.status() == 200 {
@@ -204,11 +202,11 @@ impl Client {
         Ok(())
     }
 
-    pub async fn get_label_uuid(&mut self, device_label: &String) -> Result<String> {
-        let label_upper = device_label.clone().to_uppercase();
+    pub async fn get_label_uuid(&mut self, device_label: &str) -> Result<String> {
+        let label_upper = device_label.to_uppercase();
 
         // we probably haven't fetched labels if length is 0
-        if self.labels.len() == 0 {
+        if self.labels.is_empty() {
             self.get_labels().await?;
         }
 

@@ -1,17 +1,15 @@
-extern crate base64;
-extern crate oauth2;
-extern crate url;
-
 use super::config::get_input;
 use super::Result;
-use oauth2::basic::BasicClient;
-use oauth2::prelude::*;
-use oauth2::AccessToken;
-use oauth2::{AuthUrl, AuthorizationCode, ClientId, ClientSecret, TokenResponse, TokenUrl};
+use helium_console::NewDeviceRequest;
+use oauth2::{
+    basic::BasicClient,
+    prelude::{NewType, SecretNewType},
+    AccessToken, AuthUrl, AuthorizationCode, ClientId, ClientSecret, TokenResponse, TokenUrl,
+};
 use reqwest::Client as ReqwestClient;
+use serde_derive::{Deserialize, Serialize};
 use std::time::Duration;
 use url::Url;
-use helium_console::NewDeviceRequest;
 
 const ACCOUNT_BASE_URL: &str = "https://account.thethingsnetwork.org";
 
@@ -51,7 +49,7 @@ impl Client {
             )?)),
         );
         let access_code = get_input("Provide a single use ttnctl access code");
-        let code = AuthorizationCode::new(access_code.to_string());
+        let code = AuthorizationCode::new(access_code);
         let token_res = client.exchange_code(code).unwrap();
         Ok(token_res.access_token().clone())
     }
@@ -69,8 +67,7 @@ impl Client {
     }
 
     pub async fn get_apps(&self, token: &AccessToken) -> Result<Vec<App>> {
-        let request =
-            self.get_with_token(&token.secret(), format!("/api/v2/applications").as_str());
+        let request = self.get_with_token(&token.secret(), "/api/v2/applications");
         let response = request.send().await?;
         let body = response.text().await.unwrap();
         let apps: Vec<App> = serde_json::from_str(&body)?;
@@ -97,7 +94,7 @@ impl Client {
         Ok(token_response.access_token)
     }
 
-    pub async fn get_devices(&self, app: &App, token: &String) -> Result<Vec<TtnDevice>> {
+    pub async fn get_devices(&self, app: &App, token: &str) -> Result<Vec<TtnDevice>> {
         // We brute force going through handler URLs
         for url in &APP_BASE_URL {
             let request = self

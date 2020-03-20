@@ -1,11 +1,5 @@
-#[macro_use]
-extern crate serde_derive;
-extern crate serde_json;
-#[macro_use]
-extern crate prettytable;
-
-use prettytable::Table;
-use std::process;
+use prettytable::{cell, row, Table};
+use std::{process, str::FromStr};
 use structopt::StructOpt;
 
 pub type Result<T = ()> = std::result::Result<T, Box<dyn std::error::Error>>;
@@ -18,7 +12,6 @@ mod ttn;
 use clicmd::*;
 use config::get_input;
 use helium_console::*;
-use std::str::FromStr;
 
 /// Interact with Helium API via CLI
 #[derive(StructOpt, Debug)]
@@ -231,7 +224,7 @@ async fn ttn_import() -> Result {
                             Some(device)
                         }
                         Err(err) => {
-                            println!("{}", err.description());
+                            println!("{}", err);
                             if let Some(error) = err.downcast_ref::<Error>() {
                                 match error {
                                     Error::NewDevice422 => {
@@ -255,8 +248,7 @@ async fn ttn_import() -> Result {
                             UserResponse::Yes => true,
                             UserResponse::No => false,
                             UserResponse::Maybe => {
-                                let first_answer =
-                                    get_input(format!("Add label to device?").as_str());
+                                let first_answer = get_input("Add label to device?");
                                 let answer = yes_or_no(first_answer, Some("Please type y or n"));
                                 match answer {
                                     UserResponse::Yes => true,
