@@ -1,10 +1,7 @@
-#[macro_use]
-extern crate serde_derive;
-extern crate serde_json;
+use serde_derive::{Deserialize, Serialize};
 
 pub mod client;
 pub mod errors;
-
 pub use errors::*;
 
 pub type Result<T = ()> = std::result::Result<T, Box<dyn std::error::Error>>;

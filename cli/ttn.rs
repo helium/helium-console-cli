@@ -1,7 +1,3 @@
-extern crate base64;
-extern crate oauth2;
-extern crate url;
-
 use super::config::get_input;
 use super::Result;
 use helium_console::NewDeviceRequest;
@@ -10,6 +6,7 @@ use oauth2::prelude::*;
 use oauth2::AccessToken;
 use oauth2::{AuthUrl, AuthorizationCode, ClientId, ClientSecret, TokenResponse, TokenUrl};
 use reqwest::Client as ReqwestClient;
+use serde_derive::{Deserialize, Serialize};
 use std::time::Duration;
 use url::Url;
 
