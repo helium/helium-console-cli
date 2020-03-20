@@ -12,22 +12,13 @@ pub type Result<T = ()> = std::result::Result<T, Box<dyn std::error::Error>>;
 const CONF_PATH: &str = ".helium-console-config.toml";
 
 mod clicmd;
-mod client;
 mod config;
 mod ttn;
-mod types;
 
 use clicmd::*;
 use config::get_input;
+use helium_console::*;
 use std::str::FromStr;
-use types::*;
-
-#[derive(Debug, Deserialize, Serialize)]
-pub struct Config {
-    key: String,
-    base_url: String,
-    request_timeout: u64,
-}
 
 /// Interact with Helium API via CLI
 #[derive(StructOpt, Debug)]
@@ -134,15 +125,6 @@ async fn run(cli: Cli) -> Result {
                 ttn_import().await?;
             }
         },
-    }
-    Ok(())
-}
-
-/// Throws an error if UUID isn't properly input
-pub fn validate_uuid_input(id: &String) -> Result {
-    if let Err(err) = uuid::Uuid::parse_str(id.as_str()) {
-        println!("{} [input: {}]", err, id);
-        return Err(Error::InvalidUuid.into());
     }
     Ok(())
 }
@@ -279,9 +261,7 @@ async fn ttn_import() -> Result {
                                 match answer {
                                     UserResponse::Yes => true,
                                     UserResponse::No => false,
-                                    UserResponse::Maybe => {
-                                        panic!("Maybe should not occur here")
-                                    }
+                                    UserResponse::Maybe => panic!("Maybe should not occur here"),
                                 }
                             }
                         };

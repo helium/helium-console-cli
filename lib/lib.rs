@@ -1,4 +1,13 @@
-use super::Result;
+#[macro_use]
+extern crate serde_derive;
+extern crate serde_json;
+
+pub mod client;
+pub mod errors;
+
+pub use errors::*;
+
+pub type Result<T = ()> = std::result::Result<T, Box<dyn std::error::Error>>;
 
 #[derive(Clone, Deserialize, Debug)]
 pub struct Device {
@@ -160,8 +169,6 @@ pub struct DeviceLabel {
     label: String,
 }
 
-use super::validate_uuid_input;
-
 impl DeviceLabel {
     pub fn from_uuids(device: String, label: String) -> Result<DeviceLabel> {
         validate_uuid_input(&device)?;
@@ -170,80 +177,11 @@ impl DeviceLabel {
     }
 }
 
-use std::error::Error as stdError;
-use std::{fmt, str};
-
-#[derive(Debug, Clone)]
-pub enum Error {
-    InvalidAppEui,
-    InvalidAppKey,
-    InvalidDevEui,
-    InvalidApiKey,
-    InvalidUuid,
-    NewDevice422,
-    NewDeviceApi,
-    NewLabel422,
-    NewLabelApi,
-    NewDeviceLabelApi,
-}
-
-impl fmt::Display for Error {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            Error::InvalidAppEui => {
-                write!(f, "Invalid AppEui input. Must be 8 bytes represented in hex (\"0123456789ABCDEF\")")
-            }
-            Error::InvalidAppKey => {
-                write!(f, "Invalid AppKey input. Must be 16 bytes represented in hex (\"0123456789ABCDEF0123456789ABCDEF\")")
-            }
-            Error::InvalidDevEui => {
-                write!(f, "Invalid DevEui input. Must be 8 bytes represented in hex (\"0123456789ABCDEF\")")
-            }
-            Error::InvalidApiKey => {
-                write!(f, "Invalid Api Key. Must be 32 bytes represented in base64")
-            }
-            Error::InvalidUuid => {
-                write!(f, "Invalid UUID input. Expected in hyphenated form \"00000000-0000-0000-0000-000000000000\"")
-            }
-            Error::NewDevice422 => {
-                write!(f, "Failed Creating Device! Device with identical credentials already exists")
-            }
-            Error::NewDeviceApi => {
-                write!(f, "Failed Creating Device! Unknown server error")
-            }
-            Error::NewLabel422 => {
-                write!(f, "Failed Creating Label! Label with same name already exists under organization")
-            }
-            Error::NewLabelApi => {
-                write!(f, "Failed Creating Label! Unknown server error")
-            }
-            Error::NewDeviceLabelApi => {
-                write!(f, "Failed Creating Device Label! Unknown server error")
-            }
-
-
-        }
+/// Throws an error if UUID isn't properly input
+pub fn validate_uuid_input(id: &String) -> Result {
+    if let Err(err) = uuid::Uuid::parse_str(id.as_str()) {
+        println!("{} [input: {}]", err, id);
+        return Err(Error::InvalidUuid.into());
     }
-}
-
-impl stdError for Error {
-    fn description(&self) -> &str {
-        match self {
-            Error::InvalidAppEui => "Invalid AppEui input. Must be 8 bytes represented in hex (\"0123456789ABCDEF\")",
-            Error::InvalidAppKey => "Invalid AppKey input. Must be 16 bytes represented in hex (\"0123456789ABCDEF0123456789ABCDEF\")",
-            Error::InvalidDevEui => "Invalid DevEui input. Must be 8 bytes represented in hex (\"0123456789ABCDEF\")",
-            Error::InvalidApiKey => "Invalid Api Key. Must be 32 bytes represented in base64",
-            Error::InvalidUuid => "Invalid UUID input. Expected in hyphenated form \"00000000-0000-0000-0000-000000000000\"",
-            Error::NewDevice422 => "Failed Creating Device! Device with identical credentials already exists",
-            Error::NewDeviceApi => "Failed Creating Device! Unknown server error", 
-            Error::NewLabel422 => "Failed Creating Label! Label with same name already exists under organization",
-            Error::NewLabelApi => "Failed Creating Label! Unknown server error",
-            Error::NewDeviceLabelApi => "Failed Creating Device Label! Unknown server error",
-        }
-    }
-
-    fn cause(&self) -> Option<&dyn stdError> {
-        // Generic error, underlying cause isn't tracked.
-        None
-    }
+    Ok(())
 }

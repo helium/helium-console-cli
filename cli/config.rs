@@ -1,13 +1,10 @@
-use super::types::Error;
-use super::Config;
+use super::Error;
 use super::Result;
+use helium_console::client::Config;
 use std::fs;
 use std::io::{stdin, Write};
 use std::path::Path;
 use toml;
-
-const DEFAULT_BASE_URL: &str = "https://console.helium.com";
-const DEFAULT_TIMEOUT: u64 = 120;
 
 pub fn get_input(prompt: &str) -> String {
     print!("{}\r\n", prompt);
@@ -31,11 +28,7 @@ pub fn load(path: &str) -> Result<Config> {
             return Err(Error::InvalidApiKey.into());
         }
 
-        let config = Config {
-            key,
-            base_url: DEFAULT_BASE_URL.to_string(),
-            request_timeout: DEFAULT_TIMEOUT,
-        };
+        let config = Config::new(key);
 
         file.write_all(&toml::to_string(&config)?.as_bytes())?;
     }

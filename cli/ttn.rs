@@ -4,8 +4,8 @@ extern crate rand;
 extern crate url;
 
 use super::config::get_input;
-use super::types::NewDeviceRequest;
 use super::Result;
+use helium_console::NewDeviceRequest;
 use oauth2::basic::BasicClient;
 use oauth2::prelude::*;
 use oauth2::AccessToken;

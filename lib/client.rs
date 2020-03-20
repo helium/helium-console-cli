@@ -1,10 +1,30 @@
-use super::types::*;
-use super::Config;
+use super::Error;
 use super::Result;
+use super::*;
 use base64;
 use reqwest::Client as ReqwestClient;
 use std::collections::HashMap;
 use std::time::Duration;
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct Config {
+    key: String,
+    base_url: String,
+    request_timeout: u64,
+}
+
+const DEFAULT_BASE_URL: &str = "https://console.helium.com";
+const DEFAULT_TIMEOUT: u64 = 120;
+
+impl Config {
+    pub fn new(key: String) -> Config {
+        Config {
+            key,
+            base_url: DEFAULT_BASE_URL.to_string(),
+            request_timeout: DEFAULT_TIMEOUT,
+        }
+    }
+}
 
 #[derive(Clone, Debug)]
 pub struct Client {
@@ -185,7 +205,6 @@ impl Client {
     }
 
     pub async fn get_label_uuid(&mut self, device_label: &String) -> Result<String> {
-
         let label_upper = device_label.clone().to_uppercase();
 
         // we probably haven't fetched labels if length is 0
