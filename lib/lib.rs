@@ -21,6 +21,18 @@ impl Device {
     pub fn id(&self) -> &String {
         &self.id
     }
+
+    pub fn app_eui(&self) -> &String {
+        &self.app_eui
+    }
+
+    pub fn dev_eui(&self) -> &String {
+        &self.dev_eui
+    }
+
+    pub fn app_key(&self) -> &String {
+        &self.app_key
+    }
 }
 
 #[derive(Clone, Deserialize, Serialize, Debug)]
