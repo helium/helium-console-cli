@@ -11,7 +11,7 @@ pub struct Config {
     request_timeout: u64,
 }
 
-const DEFAULT_BASE_URL: &str = "https://console.helium.com";
+const DEFAULT_BASE_URL: &str = "https://staging-console.helium.com";
 const DEFAULT_TIMEOUT: u64 = 120;
 
 impl Config {
@@ -110,7 +110,7 @@ impl Client {
         Ok(device)
     }
 
-    pub async fn post_device(&self, new_device_request: &NewDeviceRequest) -> Result<Device> {
+    pub async fn post_device(&self, new_device_request: &NewDevice) -> Result<Device> {
         let request = self.post("api/v1/devices")?.json(&new_device_request);
         let response = request.send().await?;
         if response.status() == 201 {
@@ -118,8 +118,10 @@ impl Client {
             let device: Device = serde_json::from_str(&body)?;
             Ok(device)
         } else if response.status() == 422 {
+            let body = response.text().await?;
             Err(Error::NewDevice422.into())
         } else {
+            let body = response.text().await?;
             Err(Error::NewDeviceApi.into())
         }
     }

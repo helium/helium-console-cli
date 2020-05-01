@@ -71,7 +71,7 @@ async fn run(cli: Cli) -> Result {
                     name,
                 } => {
                     let new_device =
-                        NewDeviceRequest::from_user_input(app_eui, app_key, dev_eui, name)?;
+                        NewDevice::from_user_input(app_eui, app_key, dev_eui, name)?;
                     println!("{:#?}", client.post_device(&new_device).await?);
                 }
                 DeviceCmd::Delete {
