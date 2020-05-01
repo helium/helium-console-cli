@@ -11,7 +11,7 @@ pub struct Config {
     request_timeout: u64,
 }
 
-const DEFAULT_BASE_URL: &str = "https://staging-console.helium.com";
+const DEFAULT_BASE_URL: &str = "https://console.helium.com";
 const DEFAULT_TIMEOUT: u64 = 120;
 
 impl Config {
