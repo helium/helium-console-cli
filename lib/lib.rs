@@ -110,10 +110,10 @@ impl NewDevice {
         }
 
         Ok(NewDevice {
-                app_eui,
-                app_key,
-                dev_eui,
-                name,
+            app_eui,
+            app_key,
+            dev_eui,
+            name,
         })
     }
 
@@ -133,7 +133,7 @@ impl NewDevice {
 impl NewLabel {
     pub fn from_string(string: &str) -> NewLabel {
         NewLabel {
-                name: string.to_owned(),
+            name: string.to_owned(),
         }
     }
 }
@@ -160,15 +160,17 @@ impl Label {
 
 #[derive(Clone, Deserialize, Serialize, Debug)]
 pub struct DeviceLabel {
-    device: String,
     label: String,
 }
 
 impl DeviceLabel {
-    pub fn from_uuids(device: String, label: String) -> Result<DeviceLabel> {
-        validate_uuid_input(&device)?;
+    pub fn from_uuid(label: String) -> Result<DeviceLabel> {
         validate_uuid_input(&label)?;
-        Ok(DeviceLabel { device, label })
+        Ok(DeviceLabel { label })
+    }
+
+    pub fn get_uuid(&self) -> &String {
+        &self.label
     }
 }
 

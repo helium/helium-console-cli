@@ -176,26 +176,43 @@ impl Client {
     }
 
     /// Device Label
-    pub async fn add_device_label(&self, device_label: &DeviceLabel) -> Result<()> {
-        let request = self.post("api/v1/devices_labels")?.json(&device_label);
+    pub async fn add_device_label(
+        &self,
+        device_id: String,
+        device_label: &DeviceLabel,
+    ) -> Result<()> {
+        let request = self
+            .post(format!("api/v1/devices/{:}/labels", device_id).as_str())?
+            .json(&device_label);
         let response = request.send().await?;
         if response.status() == 201 || response.status() == 200 {
             let body = response.text().await?;
             println!("{}", body);
             Ok(())
         } else {
+            let body = response.text().await?;
+            println!("{}", body);
             Err(Error::NewDeviceLabelApi.into())
         }
     }
 
-    pub async fn remove_device_label(&self, device_label: &DeviceLabel) -> Result<()> {
-        let request = self
-            .post("api/v1/devices_labels/delete")?
-            .json(&device_label);
+    pub async fn remove_device_label(
+        &self,
+        device_id: String,
+        device_label: &DeviceLabel,
+    ) -> Result<()> {
+        let request = self.delete(
+            format!(
+                "api/v1/devices/{:}/labels/{:}",
+                device_id,
+                device_label.get_uuid()
+            )
+            .as_str(),
+        )?;
         let response = request.send().await?;
         if response.status() == 200 {
             let body = response.text().await?;
-            println!("{}", body);
+            println!("{:}", body);
         } else if response.status() == 404 {
             println!("Device label not found. Delete failed.");
         }
