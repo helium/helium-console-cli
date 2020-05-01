@@ -104,7 +104,7 @@ async fn run(cli: Cli) -> Result {
             match cmd {
                 LabelCmd::List => println!("{:#?}", client.get_labels().await?),
                 LabelCmd::Create { name } => {
-                    let request = NewLabelRequest::from_string(&name);
+                    let request = NewLabel::from_string(&name);
                     println!("{:#?}", client.post_label(&request).await?);
                 }
                 LabelCmd::DeleteById { id } => {

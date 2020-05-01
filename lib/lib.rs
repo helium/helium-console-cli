@@ -130,23 +130,16 @@ impl NewDevice {
     }
 }
 
-#[derive(Clone, Deserialize, Serialize, Debug)]
-pub struct NewLabelRequest {
-    label: LabelRequest,
-}
-
-impl NewLabelRequest {
-    pub fn from_string(string: &str) -> NewLabelRequest {
-        NewLabelRequest {
-            label: LabelRequest {
+impl NewLabel {
+    pub fn from_string(string: &str) -> NewLabel {
+        NewLabel {
                 name: string.to_owned(),
-            },
         }
     }
 }
 
 #[derive(Clone, Deserialize, Serialize, Debug)]
-pub struct LabelRequest {
+pub struct NewLabel {
     name: String,
 }
 

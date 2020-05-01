@@ -118,10 +118,8 @@ impl Client {
             let device: Device = serde_json::from_str(&body)?;
             Ok(device)
         } else if response.status() == 422 {
-            let body = response.text().await?;
             Err(Error::NewDevice422.into())
         } else {
-            let body = response.text().await?;
             Err(Error::NewDeviceApi.into())
         }
     }
@@ -151,7 +149,7 @@ impl Client {
         Ok(labels)
     }
 
-    pub async fn post_label(&self, new_label_request: &NewLabelRequest) -> Result<Label> {
+    pub async fn post_label(&self, new_label_request: &NewLabel) -> Result<Label> {
         let request = self.post("api/v1/labels")?.json(&new_label_request);
         let response = request.send().await?;
         if response.status() == 201 {
@@ -216,7 +214,7 @@ impl Client {
         // create it
         if !self.labels.contains_key(&label_upper) {
             println!("Label does not exist. Creating label: {}", label_upper);
-            let request = NewLabelRequest::from_string(&label_upper);
+            let request = NewLabel::from_string(&label_upper);
             let label = self.post_label(&request).await?;
             self.labels.insert(label.name().clone(), label.id().clone());
         }
