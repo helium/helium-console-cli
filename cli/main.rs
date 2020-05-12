@@ -70,8 +70,7 @@ async fn run(cli: Cli) -> Result {
                     dev_eui,
                     name,
                 } => {
-                    let new_device =
-                        NewDeviceRequest::from_user_input(app_eui, app_key, dev_eui, name)?;
+                    let new_device = NewDevice::from_user_input(app_eui, app_key, dev_eui, name)?;
                     println!("{:#?}", client.post_device(&new_device).await?);
                 }
                 DeviceCmd::Delete {
@@ -88,12 +87,12 @@ async fn run(cli: Cli) -> Result {
                     client.delete_device(&id).await?;
                 }
                 DeviceCmd::AddLabel { device, label } => {
-                    let device_label = DeviceLabel::from_uuids(device, label)?;
-                    client.add_device_label(&device_label).await?;
+                    let device_label = DeviceLabel::from_uuid(label)?;
+                    client.add_device_label(device, &device_label).await?;
                 }
                 DeviceCmd::RemoveLabel { device, label } => {
-                    let device_label = DeviceLabel::from_uuids(device, label)?;
-                    client.remove_device_label(&device_label).await?;
+                    let device_label = DeviceLabel::from_uuid(label)?;
+                    client.remove_device_label(device, &device_label).await?;
                 }
             }
         }
@@ -104,7 +103,7 @@ async fn run(cli: Cli) -> Result {
             match cmd {
                 LabelCmd::List => println!("{:#?}", client.get_labels().await?),
                 LabelCmd::Create { name } => {
-                    let request = NewLabelRequest::from_string(&name);
+                    let request = NewLabel::from_string(&name);
                     println!("{:#?}", client.post_label(&request).await?);
                 }
                 LabelCmd::DeleteById { id } => {
@@ -260,9 +259,10 @@ async fn ttn_import() -> Result {
                         if confirm {
                             println!("Adding label to device {}", appid);
                             let label_uuid = client.get_label_uuid(&appid).await?;
-                            let device_label =
-                                DeviceLabel::from_uuids(device.id().to_string(), label_uuid)?;
-                            client.add_device_label(&device_label).await?;
+                            let device_label = DeviceLabel::from_uuid(label_uuid)?;
+                            client
+                                .add_device_label(device.id().to_string(), &device_label)
+                                .await?;
                         }
                     }
                 }

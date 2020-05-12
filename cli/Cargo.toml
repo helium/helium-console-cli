@@ -1,6 +1,6 @@
 [package]
 name = "helium-console-cli"
-version = "0.1.5"
+version = "0.1.6"
 authors = ["Louis Thiery <louis@helium.com>"]
 edition = "2018"
 

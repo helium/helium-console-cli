@@ -80,25 +80,20 @@ impl GetDevice {
 }
 
 #[derive(Clone, Deserialize, Serialize, Debug)]
-struct NewDevice {
+pub struct NewDevice {
     app_eui: String,
     app_key: String,
     dev_eui: String,
     name: String,
 }
 
-#[derive(Clone, Deserialize, Serialize, Debug)]
-pub struct NewDeviceRequest {
-    device: NewDevice,
-}
-
-impl NewDeviceRequest {
+impl NewDevice {
     pub fn from_user_input(
         app_eui: String,
         app_key: String,
         dev_eui: String,
         name: String,
-    ) -> Result<NewDeviceRequest> {
+    ) -> Result<NewDevice> {
         let app_eui_decoded = hex::decode(app_eui.clone())?;
         if app_eui_decoded.len() != 8 {
             return Err(Error::InvalidAppEui.into());
@@ -114,46 +109,37 @@ impl NewDeviceRequest {
             return Err(Error::InvalidDevEui.into());
         }
 
-        Ok(NewDeviceRequest {
-            device: NewDevice {
-                app_eui,
-                app_key,
-                dev_eui,
-                name,
-            },
+        Ok(NewDevice {
+            app_eui,
+            app_key,
+            dev_eui,
+            name,
         })
     }
 
     pub fn app_eui(&self) -> &String {
-        &self.device.app_eui
+        &self.app_eui
     }
 
     pub fn app_key(&self) -> &String {
-        &self.device.app_key
+        &self.app_key
     }
 
     pub fn dev_eui(&self) -> &String {
-        &self.device.dev_eui
+        &self.dev_eui
     }
 }
 
-#[derive(Clone, Deserialize, Serialize, Debug)]
-pub struct NewLabelRequest {
-    label: LabelRequest,
-}
-
-impl NewLabelRequest {
-    pub fn from_string(string: &str) -> NewLabelRequest {
-        NewLabelRequest {
-            label: LabelRequest {
-                name: string.to_owned(),
-            },
+impl NewLabel {
+    pub fn from_string(string: &str) -> NewLabel {
+        NewLabel {
+            name: string.to_owned(),
         }
     }
 }
 
 #[derive(Clone, Deserialize, Serialize, Debug)]
-pub struct LabelRequest {
+pub struct NewLabel {
     name: String,
 }
 
@@ -174,15 +160,17 @@ impl Label {
 
 #[derive(Clone, Deserialize, Serialize, Debug)]
 pub struct DeviceLabel {
-    device: String,
     label: String,
 }
 
 impl DeviceLabel {
-    pub fn from_uuids(device: String, label: String) -> Result<DeviceLabel> {
-        validate_uuid_input(&device)?;
+    pub fn from_uuid(label: String) -> Result<DeviceLabel> {
         validate_uuid_input(&label)?;
-        Ok(DeviceLabel { device, label })
+        Ok(DeviceLabel { label })
+    }
+
+    pub fn get_uuid(&self) -> &String {
+        &self.label
     }
 }
 

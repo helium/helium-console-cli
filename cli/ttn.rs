@@ -1,6 +1,6 @@
 use super::config::get_input;
 use super::Result;
-use helium_console::NewDeviceRequest;
+use helium_console::NewDevice;
 use oauth2::{
     basic::BasicClient,
     prelude::{NewType, SecretNewType},
@@ -165,8 +165,8 @@ pub struct Device {
 }
 
 impl TtnDevice {
-    pub fn into_new_device_request(self) -> Result<NewDeviceRequest> {
-        NewDeviceRequest::from_user_input(
+    pub fn into_new_device_request(self) -> Result<NewDevice> {
+        NewDevice::from_user_input(
             self.lorawan_device.app_eui,
             self.lorawan_device.app_key,
             self.lorawan_device.dev_eui,
