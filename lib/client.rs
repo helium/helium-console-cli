@@ -1,5 +1,4 @@
 use super::*;
-use base64;
 use reqwest::Client as ReqwestClient;
 use std::collections::HashMap;
 use std::time::Duration;
