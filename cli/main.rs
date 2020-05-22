@@ -199,6 +199,14 @@ async fn ttn_import() -> Result {
         };
 
         for ttn_device in devices {
+        
+        
+        	if ttn_device.appkey() == "" {
+        	
+        		if ttn_device.appskey() != "" {
+        			println!("{}", format!("WARNING: ABP device not supported {:?}", ttn_device.get_simple_string()).as_str())}
+        	
+        	} else {
             // if user elected to import all
             // create_device will always be Yes
             let create_device = match input_all {
@@ -271,6 +279,7 @@ async fn ttn_import() -> Result {
                 }
                 UserResponse::Maybe => panic!("User reponse for create device must be yes or no"),
             }
+        }
         }
     }
     Ok(())

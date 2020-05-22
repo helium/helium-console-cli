@@ -12,6 +12,8 @@ pub enum Error {
     NewLabel422,
     NewLabelApi,
     NewDeviceLabelApi,
+    UnauthorizedApi,
+    HttpErrorApi,
 }
 
 impl fmt::Display for Error {
@@ -46,6 +48,12 @@ impl fmt::Display for Error {
             }
             Error::NewDeviceLabelApi => {
                 "Failed Creating Device Label! Unknown server error"
+            }            
+            Error::UnauthorizedApi => {
+                "Failed to connect to Helium API server. Unauthorized"
+            }
+            Error::HttpErrorApi => {
+                "Failed to connect to Helium API server. Unexpected response"
             }
         };
         write!(f, "{}", msg)
@@ -65,6 +73,8 @@ impl ::std::error::Error for Error {
             Error::NewLabel422 => "Failed Creating Label! Label with same name already exists under organization",
             Error::NewLabelApi => "Failed Creating Label! Unknown server error",
             Error::NewDeviceLabelApi => "Failed Creating Device Label! Unknown server error",
+            Error::UnauthorizedApi => "Failed to connect to Helium API server. Unauthorized",
+            Error::HttpErrorApi => "Failed to connect to Helium API server. Unexpected response",
         }
     }
 }
