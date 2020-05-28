@@ -79,16 +79,16 @@ impl Client {
     pub async fn get_devices(&self) -> Result<Vec<Device>> {
         let request = self.get("api/v1/devices")?;
         let response = request.send().await?;
-        if response.status() == 200 {        
-        	let body = response.text().await.unwrap();
-        	let devices: Vec<Device> = serde_json::from_str(&body)?;
-        	Ok(devices)
+        if response.status() == 200 {
+            let body = response.text().await.unwrap();
+            let devices: Vec<Device> = serde_json::from_str(&body)?;
+            Ok(devices)
         } else if response.status() == 401 {
-        	let body = response.text().await.unwrap();
-			println!("{}", body);
+            let body = response.text().await.unwrap();
+            println!("{}", body);
             Err(Error::UnauthorizedApi.into())
         } else {
-        	Err(Error::HttpErrorApi.into())
+            Err(Error::HttpErrorApi.into())
         }
     }
 
@@ -103,32 +103,32 @@ impl Client {
             .as_str(),
         )?;
         let response = request.send().await?;
-        if response.status() == 200 {        
-        	let body = response.text().await.unwrap();
-        	let devices: Device = serde_json::from_str(&body)?;
-        	Ok(devices)
+        if response.status() == 200 {
+            let body = response.text().await.unwrap();
+            let devices: Device = serde_json::from_str(&body)?;
+            Ok(devices)
         } else if response.status() == 401 {
-        	let body = response.text().await.unwrap();
-			println!("{}", body);
+            let body = response.text().await.unwrap();
+            println!("{}", body);
             Err(Error::UnauthorizedApi.into())
         } else {
-        	Err(Error::HttpErrorApi.into())
+            Err(Error::HttpErrorApi.into())
         }
     }
 
     pub async fn get_device_by_id(&self, id: &str) -> Result<Device> {
         let request = self.get(format!("api/v1/devices/{}", id).as_str())?;
         let response = request.send().await?;
-        if response.status() == 200 {    
-	        let body = response.text().await.unwrap();
-    	    let device: Device = serde_json::from_str(&body)?;
-        	Ok(device)
+        if response.status() == 200 {
+            let body = response.text().await.unwrap();
+            let device: Device = serde_json::from_str(&body)?;
+            Ok(device)
         } else if response.status() == 401 {
-        	let body = response.text().await.unwrap();
-			println!("{}", body);
+            let body = response.text().await.unwrap();
+            println!("{}", body);
             Err(Error::UnauthorizedApi.into())
         } else {
-        	Err(Error::HttpErrorApi.into())	
+            Err(Error::HttpErrorApi.into())
         }
     }
 
@@ -140,8 +140,8 @@ impl Client {
             let device: Device = serde_json::from_str(&body)?;
             Ok(device)
         } else if response.status() == 401 {
-        	let body = response.text().await.unwrap();
-			println!("{}", body);
+            let body = response.text().await.unwrap();
+            println!("{}", body);
             Err(Error::UnauthorizedApi.into())
         } else if response.status() == 422 {
             Err(Error::NewDevice422.into())
@@ -156,16 +156,16 @@ impl Client {
         if response.status() == 200 {
             println!("Device delete successful");
             let _response_body = response.text().await?;
-        	Ok(())
+            Ok(())
         } else if response.status() == 401 {
-        	let body = response.text().await.unwrap();
-			println!("{}", body);
+            let body = response.text().await.unwrap();
+            println!("{}", body);
             Err(Error::UnauthorizedApi.into())
         } else if response.status() == 404 {
             println!("Device not found. Delete failed.");
             Ok(())
         } else {
-        	Err(Error::HttpErrorApi.into())	
+            Err(Error::HttpErrorApi.into())
         }
     }
 

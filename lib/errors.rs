@@ -48,7 +48,7 @@ impl fmt::Display for Error {
             }
             Error::NewDeviceLabelApi => {
                 "Failed Creating Device Label! Unknown server error"
-            }            
+            }
             Error::UnauthorizedApi => {
                 "Failed to connect to Helium API server. Unauthorized"
             }
