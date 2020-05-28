@@ -199,77 +199,97 @@ async fn ttn_import() -> Result {
         };
 
         for ttn_device in devices {
-            // if user elected to import all
-            // create_device will always be Yes
-            let create_device = match input_all {
-                UserResponse::Yes => UserResponse::Yes,
-                UserResponse::No => {
-                    let first_answer = get_input(
-                        format!("Import device? {:?}", ttn_device.get_simple_string()).as_str(),
-                    );
-                    yes_or_no(first_answer, Some("Please type y or n"))
+            if ttn_device.appkey() == "" {
+                if ttn_device.appskey() != "" {
+                    println!(
+                        "{}",
+                        format!(
+                            "WARNING: ABP device not supported {:?}",
+                            ttn_device.get_simple_string()
+                        )
+                        .as_str()
+                    )
                 }
-                UserResponse::Maybe => panic!("User reponse for create device must be yes or no"),
-            };
+            } else {
+                // if user elected to import all
+                // create_device will always be Yes
+                let create_device = match input_all {
+                    UserResponse::Yes => UserResponse::Yes,
+                    UserResponse::No => {
+                        let first_answer = get_input(
+                            format!("Import device? {:?}", ttn_device.get_simple_string()).as_str(),
+                        );
+                        yes_or_no(first_answer, Some("Please type y or n"))
+                    }
+                    UserResponse::Maybe => {
+                        panic!("User reponse for create device must be yes or no")
+                    }
+                };
 
-            match create_device {
-                UserResponse::Yes => {
-                    let appid = ttn_device.appid().clone();
-                    let request = ttn_device.into_new_device_request()?;
+                match create_device {
+                    UserResponse::Yes => {
+                        let appid = ttn_device.appid().clone();
+                        let request = ttn_device.into_new_device_request()?;
 
-                    let device = match client.post_device(&request).await {
-                        Ok(device) => {
-                            println!("Successly Created {:?}", device);
-                            Some(device)
-                        }
-                        Err(err) => {
-                            println!("{}", err);
-                            if let Some(error) = err.downcast_ref::<Error>() {
-                                match error {
-                                    Error::NewDevice422 => {
-                                        let request = GetDevice::from_user_input(
-                                            request.app_eui().clone(),
-                                            request.app_key().clone(),
-                                            request.dev_eui().clone(),
-                                        )?;
-                                        Some(client.get_device(&request).await?)
-                                    }
-                                    _ => None,
-                                }
-                            } else {
-                                None
+                        let device = match client.post_device(&request).await {
+                            Ok(device) => {
+                                println!("Successly Created {:?}", device);
+                                Some(device)
                             }
-                        }
-                    };
-
-                    if let Some(device) = device {
-                        let confirm = match do_label {
-                            UserResponse::Yes => true,
-                            UserResponse::No => false,
-                            UserResponse::Maybe => {
-                                let first_answer = get_input("Add label to device?");
-                                let answer = yes_or_no(first_answer, Some("Please type y or n"));
-                                match answer {
-                                    UserResponse::Yes => true,
-                                    UserResponse::No => false,
-                                    UserResponse::Maybe => panic!("Maybe should not occur here"),
+                            Err(err) => {
+                                println!("{}", err);
+                                if let Some(error) = err.downcast_ref::<Error>() {
+                                    match error {
+                                        Error::NewDevice422 => {
+                                            let request = GetDevice::from_user_input(
+                                                request.app_eui().clone(),
+                                                request.app_key().clone(),
+                                                request.dev_eui().clone(),
+                                            )?;
+                                            Some(client.get_device(&request).await?)
+                                        }
+                                        _ => None,
+                                    }
+                                } else {
+                                    None
                                 }
                             }
                         };
-                        if confirm {
-                            println!("Adding label to device {}", appid);
-                            let label_uuid = client.get_label_uuid(&appid).await?;
-                            let device_label = DeviceLabel::from_uuid(label_uuid)?;
-                            client
-                                .add_device_label(device.id().to_string(), &device_label)
-                                .await?;
+
+                        if let Some(device) = device {
+                            let confirm = match do_label {
+                                UserResponse::Yes => true,
+                                UserResponse::No => false,
+                                UserResponse::Maybe => {
+                                    let first_answer = get_input("Add label to device?");
+                                    let answer =
+                                        yes_or_no(first_answer, Some("Please type y or n"));
+                                    match answer {
+                                        UserResponse::Yes => true,
+                                        UserResponse::No => false,
+                                        UserResponse::Maybe => {
+                                            panic!("Maybe should not occur here")
+                                        }
+                                    }
+                                }
+                            };
+                            if confirm {
+                                println!("Adding label to device {}", appid);
+                                let label_uuid = client.get_label_uuid(&appid).await?;
+                                let device_label = DeviceLabel::from_uuid(label_uuid)?;
+                                client
+                                    .add_device_label(device.id().to_string(), &device_label)
+                                    .await?;
+                            }
                         }
                     }
+                    UserResponse::No => {
+                        println!("Skipping device");
+                    }
+                    UserResponse::Maybe => {
+                        panic!("User reponse for create device must be yes or no")
+                    }
                 }
-                UserResponse::No => {
-                    println!("Skipping device");
-                }
-                UserResponse::Maybe => panic!("User reponse for create device must be yes or no"),
             }
         }
     }

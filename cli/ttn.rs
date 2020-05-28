@@ -179,6 +179,14 @@ impl TtnDevice {
         &self.app_id
     }
 
+    pub fn appkey(&self) -> &String {
+        &self.lorawan_device.app_key
+    }
+
+    pub fn appskey(&self) -> &String {
+        &self.lorawan_device.app_s_key
+    }
+
     pub fn get_simple_string(&self) -> String {
         format!(
             "TtnDevice {{ app_eui: \"{}\", dev_eui: \"{}\", app_id: \"{}\", dev_id: \"{}\", app_id: \"{}\"}}",
