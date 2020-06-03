@@ -24,6 +24,8 @@ const APP_BASE_URL: [&str; 4] = [
 
 const DEFAULT_TIMEOUT: u64 = 120;
 
+const NULL_JSON: &str = "{}";
+
 pub struct Client {
     client: ReqwestClient,
 }
@@ -106,11 +108,40 @@ impl Client {
             // this server has device information
             if response.status() == 200 {
                 let body = response.text().await.unwrap();
-                let devices: Devices = serde_json::from_str(&body)?;
-                return Ok(devices.devices);
+                let mut ret = Vec::new();
+                // if you get a 200 response but there is body is empty JSON ('{}')
+                // we've hit the application server but there's no devices
+                if body != NULL_JSON {
+                    let devices: Devices = serde_json::from_str(&body)?;
+                    for device in devices.devices {
+                        ret.push(TtnDevice::from_raw(device, url));
+                    }
+                }
+                return Ok(ret);
             }
         }
         Err(Error::NoHandler.into())
+    }
+
+    // DELETE /applications/{app_id}/devices/{dev_id}
+    pub async fn delete_device(&self, device: TtnDevice, token: &str) -> Result<()> {
+        let request = self
+            .client
+            .delete(
+                format!(
+                    "{}/applications/{}/devices/{}",
+                    device.endpoint, device.app_id, device.dev_id
+                )
+                .as_str(),
+            )
+            .bearer_auth(token);
+        let response = request.send().await?;
+        println!("response {:?}", response);
+        if response.status() == 200 {
+            Ok(())
+        } else {
+            Err(Box::new(Error::DeviceNotFound))
+        }
     }
 }
 
@@ -140,7 +171,14 @@ struct RequestTokenResponse {
 
 #[derive(Clone, Deserialize, Serialize, Debug)]
 struct Devices {
-    devices: Vec<TtnDevice>,
+    devices: Vec<TtnDeviceRaw>,
+}
+
+#[derive(Clone, Deserialize, Serialize, Debug)]
+pub struct TtnDeviceRaw {
+    app_id: String,
+    dev_id: String,
+    lorawan_device: Device,
 }
 
 #[derive(Clone, Deserialize, Serialize, Debug)]
@@ -148,6 +186,18 @@ pub struct TtnDevice {
     app_id: String,
     dev_id: String,
     lorawan_device: Device,
+    endpoint: &'static str,
+}
+
+impl TtnDevice {
+    fn from_raw(raw: TtnDeviceRaw, endpoint: &'static str) -> TtnDevice {
+        TtnDevice {
+            app_id: raw.app_id,
+            dev_id: raw.dev_id,
+            lorawan_device: raw.lorawan_device,
+            endpoint,
+        }
+    }
 }
 
 #[derive(Clone, Deserialize, Serialize, Debug)]
@@ -165,13 +215,13 @@ pub struct Device {
 }
 
 impl TtnDevice {
-    pub fn into_new_device_request(self) -> Result<NewDevice> {
+    pub fn derive_new_device_request(&self) -> Result<NewDevice> {
         NewDevice::from_user_input(
-            self.lorawan_device.app_eui,
-            self.lorawan_device.app_key,
-            self.lorawan_device.dev_eui,
+            self.lorawan_device.app_eui.clone(),
+            self.lorawan_device.app_key.clone(),
+            self.lorawan_device.dev_eui.clone(),
             // assign it some unique'ish name
-            self.lorawan_device.dev_id,
+            self.lorawan_device.dev_id.clone(),
         )
     }
 
@@ -201,12 +251,14 @@ use std::{fmt, str};
 #[derive(Debug, Clone)]
 pub enum Error {
     NoHandler,
+    DeviceNotFound,
 }
 
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             Error::NoHandler => write!(f, "No handler servers are associated with App"),
+            Error::DeviceNotFound => write!(f, "Device not found for delete"),
         }
     }
 }
@@ -215,6 +267,7 @@ impl stdError for Error {
     fn description(&self) -> &str {
         match self {
             Error::NoHandler => "No handler servers are associated with App",
+            Error::DeviceNotFound => "Device not found for delete",
         }
     }
 

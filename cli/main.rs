@@ -142,6 +142,7 @@ async fn ttn_import() -> Result {
 
     let index = get_number_from_user(index_input);
 
+    let token;
     if index > apps.len() {
         println!("There is no app with index {}", index);
     } else {
@@ -157,7 +158,7 @@ async fn ttn_import() -> Result {
             }
 
             // the account token is consumed
-            let token = ttn_client
+            token = ttn_client
                 .exchange_for_app_token(account_token, apps.clone())
                 .await?;
             for app in &apps {
@@ -168,7 +169,7 @@ async fn ttn_import() -> Result {
         } else {
             let app = apps[index - 1].clone();
             // the account token is consumed
-            let token = ttn_client
+            token = ttn_client
                 .exchange_for_app_token(account_token, vec![app.clone()])
                 .await?;
             devices.extend(ttn_client.get_devices(&app, &token).await?);
@@ -177,91 +178,148 @@ async fn ttn_import() -> Result {
         let config = config::load(CONF_PATH)?;
         let mut client = client::Client::new(config)?;
 
-        let first_answer =
-            get_input(format!("Import all {} devices at once? Otherwise, proceed with device by device import. Please type y or n", devices.len()).as_str());
-        let input_all = yes_or_no(first_answer, Some("Import ALL devices? Please type y or n"));
-        let first_answer =
-            get_input("Apply TTN application ID as Label to ALL devices? Please type y or n");
-        let label_all = yes_or_no(first_answer, Some(" Please type y or n"));
-
-        let do_label = if UserResponse::No == label_all {
-            let first_answer =
-                get_input("Skip applying TTN application ID as Label to ALL devices? Otherwise, proceed with device by device approval. Please type y or n");
-            let dont_label_all = yes_or_no(first_answer, Some(" Please type y or n"));
-
-            match dont_label_all {
-                UserResponse::No => UserResponse::Maybe,
-                UserResponse::Yes => UserResponse::No,
-                UserResponse::Maybe => panic!("maybe not valid here"),
-            }
+        // First question: import all devices or one by one?
+        if !devices.is_empty() {
+            println!("App has no devices. Moving to next app");
         } else {
-            UserResponse::Yes
-        };
+            let first_answer =
+            get_input(format!("Import all {} devices at once? Otherwise, proceed with device by device import. Please type y or n", devices.len()).as_str());
+            let input_all = yes_or_no(first_answer, Some("Import ALL devices? Please type y or n"));
 
-        for ttn_device in devices {
-            if ttn_device.appkey() == "" {
-                if ttn_device.appskey() != "" {
-                    println!(
-                        "{}",
-                        format!(
-                            "WARNING: ABP device not supported {:?}",
-                            ttn_device.get_simple_string()
-                        )
-                        .as_str()
-                    )
+            // Second question: apply label to all? don't apply label to all? or one by one?
+            let do_label = {
+                let first_answer = get_input(
+                    "Apply TTN application ID as Label to ALL devices? Please type y or n",
+                );
+                let label_all = yes_or_no(first_answer, Some(" Please type y or n"));
+
+                if UserResponse::No == label_all {
+                    let first_answer =
+                    get_input("Skip applying TTN application ID as Label to ALL devices? Otherwise, proceed with device by device approval. Please type y or n");
+                    let dont_label_all = yes_or_no(first_answer, Some(" Please type y or n"));
+
+                    match dont_label_all {
+                        UserResponse::No => UserResponse::Maybe,
+                        UserResponse::Yes => UserResponse::No,
+                        UserResponse::Maybe => panic!("maybe not valid here"),
+                    }
+                } else {
+                    UserResponse::Yes
                 }
-            } else {
-                // if user elected to import all
-                // create_device will always be Yes
-                let create_device = match input_all {
-                    UserResponse::Yes => UserResponse::Yes,
-                    UserResponse::No => {
-                        let first_answer = get_input(
-                            format!("Import device? {:?}", ttn_device.get_simple_string()).as_str(),
-                        );
-                        yes_or_no(first_answer, Some("Please type y or n"))
-                    }
-                    UserResponse::Maybe => {
-                        panic!("User reponse for create device must be yes or no")
-                    }
-                };
+            };
 
-                match create_device {
-                    UserResponse::Yes => {
-                        let appid = ttn_device.appid().clone();
-                        let request = ttn_device.into_new_device_request()?;
+            // Third question: delete all? don't apply delete all? or one by one?
+            let do_delete = {
+                let first_answer =
+                get_input("Delete ALL devices from TTN? Neglecting to do so will cause a race condition on Join. Please type y or n");
+                let label_all = yes_or_no(first_answer, Some(" Please type y or n"));
 
-                        let device = match client.post_device(&request).await {
-                            Ok(device) => {
-                                println!("Successly Created {:?}", device);
-                                Some(device)
-                            }
-                            Err(err) => {
-                                println!("{}", err);
-                                if let Some(error) = err.downcast_ref::<Error>() {
-                                    match error {
-                                        Error::NewDevice422 => {
-                                            let request = GetDevice::from_user_input(
-                                                request.app_eui().clone(),
-                                                request.app_key().clone(),
-                                                request.dev_eui().clone(),
-                                            )?;
-                                            Some(client.get_device(&request).await?)
+                if UserResponse::No == label_all {
+                    let first_answer =
+                    get_input("Skip deleting ALL devices? Otherwise, proceed with device by device delete prompts. Please type y or n");
+                    let dont_label_all = yes_or_no(first_answer, Some(" Please type y or n"));
+
+                    match dont_label_all {
+                        UserResponse::No => UserResponse::Maybe,
+                        UserResponse::Yes => UserResponse::No,
+                        UserResponse::Maybe => panic!("maybe not valid here"),
+                    }
+                } else {
+                    UserResponse::Yes
+                }
+            };
+
+            for ttn_device in devices {
+                if ttn_device.appkey() == "" {
+                    if ttn_device.appskey() != "" {
+                        println!(
+                            "{}",
+                            format!(
+                                "WARNING: ABP device not supported {:?}",
+                                ttn_device.get_simple_string()
+                            )
+                            .as_str()
+                        )
+                    }
+                } else {
+                    // if user elected to import all
+                    // create_device will always be Yes
+                    let create_device = match input_all {
+                        UserResponse::Yes => UserResponse::Yes,
+                        UserResponse::No => {
+                            let first_answer = get_input(
+                                format!("Import device? {:?}", ttn_device.get_simple_string())
+                                    .as_str(),
+                            );
+                            yes_or_no(first_answer, Some("Please type y or n"))
+                        }
+                        UserResponse::Maybe => {
+                            panic!("User reponse for create device must be yes or no")
+                        }
+                    };
+
+                    match create_device {
+                        UserResponse::Yes => {
+                            let appid = ttn_device.appid().clone();
+                            let request = ttn_device.derive_new_device_request()?;
+
+                            let device = match client.post_device(&request).await {
+                                Ok(device) => {
+                                    println!("Successly Created {:?}", device);
+                                    Some(device)
+                                }
+                                Err(err) => {
+                                    println!("{}", err);
+                                    if let Some(error) = err.downcast_ref::<Error>() {
+                                        match error {
+                                            Error::NewDevice422 => {
+                                                let request = GetDevice::from_user_input(
+                                                    request.app_eui().clone(),
+                                                    request.app_key().clone(),
+                                                    request.dev_eui().clone(),
+                                                )?;
+                                                Some(client.get_device(&request).await?)
+                                            }
+                                            _ => None,
                                         }
-                                        _ => None,
+                                    } else {
+                                        None
                                     }
-                                } else {
-                                    None
+                                }
+                            };
+
+                            if let Some(device) = &device {
+                                let confirm = match do_label {
+                                    UserResponse::Yes => true,
+                                    UserResponse::No => false,
+                                    UserResponse::Maybe => {
+                                        let first_answer = get_input("Add label to device?");
+                                        let answer =
+                                            yes_or_no(first_answer, Some("Please type y or n"));
+                                        match answer {
+                                            UserResponse::Yes => true,
+                                            UserResponse::No => false,
+                                            UserResponse::Maybe => {
+                                                panic!("Maybe should not occur here")
+                                            }
+                                        }
+                                    }
+                                };
+                                if confirm {
+                                    println!("Adding label to device {}", appid);
+                                    let label_uuid = client.get_label_uuid(&appid).await?;
+                                    let device_label = DeviceLabel::from_uuid(label_uuid)?;
+                                    client
+                                        .add_device_label(device.id().to_string(), &device_label)
+                                        .await?;
                                 }
                             }
-                        };
 
-                        if let Some(device) = device {
-                            let confirm = match do_label {
+                            let confirm = match do_delete {
                                 UserResponse::Yes => true,
                                 UserResponse::No => false,
                                 UserResponse::Maybe => {
-                                    let first_answer = get_input("Add label to device?");
+                                    let first_answer = get_input("Delete device?");
                                     let answer =
                                         yes_or_no(first_answer, Some("Please type y or n"));
                                     match answer {
@@ -274,20 +332,16 @@ async fn ttn_import() -> Result {
                                 }
                             };
                             if confirm {
-                                println!("Adding label to device {}", appid);
-                                let label_uuid = client.get_label_uuid(&appid).await?;
-                                let device_label = DeviceLabel::from_uuid(label_uuid)?;
-                                client
-                                    .add_device_label(device.id().to_string(), &device_label)
-                                    .await?;
+                                println!("Deleting device {} from TTN", appid);
+                                ttn_client.delete_device(ttn_device, &token).await?
                             }
                         }
-                    }
-                    UserResponse::No => {
-                        println!("Skipping device");
-                    }
-                    UserResponse::Maybe => {
-                        panic!("User reponse for create device must be yes or no")
+                        UserResponse::No => {
+                            println!("Skipping device");
+                        }
+                        UserResponse::Maybe => {
+                            panic!("User reponse for create device must be yes or no")
+                        }
                     }
                 }
             }
