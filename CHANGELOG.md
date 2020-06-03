@@ -32,3 +32,9 @@ Initial public release. Features include:
 * create and delete labels by UUID
 * create and delete device labels, by using (device_uuid, label_uuid)
 * import devices from The Things Network (TTN) with optional labeling with app id
+
+0.1.6 (2020-06-02)
+==================
+* Allow for deletion of devices on TTN backend upon import
+* Warn that ABP devices are not tolerated
+* Provide error for unauthorized API key
