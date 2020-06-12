@@ -154,7 +154,6 @@ pub struct App {
     access_keys: Vec<Key>,
 }
 
-
 #[derive(Clone, Deserialize, Serialize, Debug)]
 struct Key {
     name: String,

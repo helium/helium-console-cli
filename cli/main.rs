@@ -1,11 +1,7 @@
+use oauth2::{prelude::SecretNewType, AccessToken, AuthorizationCode};
 use prettytable::{cell, row, Table};
 use std::{process, str::FromStr};
 use structopt::StructOpt;
-use oauth2::{
-    prelude::SecretNewType,
-    AuthorizationCode,
-    AccessToken
-};
 
 pub type Result<T = ()> = std::result::Result<T, Box<dyn std::error::Error>>;
 const CONF_PATH: &str = ".helium-console-config.toml";
@@ -124,9 +120,8 @@ async fn run(cli: Cli) -> Result {
             TtnCmd::GetAccountToken => {
                 let ttn_client = ttn::Client::new()?;
                 println!("Generate a ttnctl access code at https://account.thethingsnetwork.org/");
-                let access_code = AuthorizationCode::new(
-                    get_input("Provide a single use ttnctl access code")
-                );
+                let access_code =
+                    AuthorizationCode::new(get_input("Provide a single use ttnctl access code"));
                 println!("{}", ttn_client.get_account_token(access_code)?.secret());
             }
             TtnCmd::GetApps { token } => {
@@ -153,9 +148,7 @@ async fn ttn_import() -> Result {
     println!("Generate a ttnctl access code at https://account.thethingsnetwork.org/");
     let mut ttn_client = ttn::Client::new()?;
 
-    let access_code = AuthorizationCode::new(
-        get_input("Provide a single use ttnctl access code")
-    );
+    let access_code = AuthorizationCode::new(get_input("Provide a single use ttnctl access code"));
     let account_token = ttn_client.get_account_token(access_code)?;
 
     let apps = ttn_client.get_apps(&account_token).await?;
@@ -424,7 +417,7 @@ pub trait IntoStringVec {
     fn into_vec_string(self) -> Vec<String>;
 }
 
-impl IntoStringVec  for Vec<ttn::App> {
+impl IntoStringVec for Vec<ttn::App> {
     fn into_vec_string(self) -> Vec<String> {
         let mut ret = Vec::new();
         for el in self {

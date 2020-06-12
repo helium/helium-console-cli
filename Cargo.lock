@@ -485,7 +485,7 @@ dependencies = [
 
 [[package]]
 name = "helium-console-cli"
-version = "0.1.7"
+version = "0.1.8-alpha"
 dependencies = [
  "base64 0.11.0",
  "helium-console",
