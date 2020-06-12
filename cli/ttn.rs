@@ -1,4 +1,3 @@
-use super::config::get_input;
 use super::Result;
 use helium_console::NewDevice;
 use oauth2::{
@@ -39,7 +38,7 @@ impl Client {
         })
     }
 
-    pub fn get_account_token(&self) -> Result<AccessToken> {
+    pub fn get_account_token(&self, access_code: AuthorizationCode) -> Result<AccessToken> {
         let client = BasicClient::new(
             ClientId::new("ttnctl".to_string()),
             Some(ClientSecret::new("ttnctl".to_string())),
@@ -50,9 +49,8 @@ impl Client {
                 format!("{}/users/token", ACCOUNT_BASE_URL).as_str(),
             )?)),
         );
-        let access_code = get_input("Provide a single use ttnctl access code");
-        let code = AuthorizationCode::new(access_code);
-        let token_res = client.exchange_code(code).unwrap();
+
+        let token_res = client.exchange_code(access_code).unwrap();
         Ok(token_res.access_token().clone())
     }
 
