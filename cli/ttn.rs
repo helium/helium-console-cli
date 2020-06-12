@@ -77,19 +77,22 @@ impl Client {
     pub async fn exchange_for_app_token(
         &mut self,
         token: AccessToken,
-        apps: Vec<App>,
+        app_ids: Vec<String>,
     ) -> Result<String> {
         let mut token_request = RequestToken { scope: Vec::new() };
 
-        for app in apps {
-            token_request.scope.push(format!("apps:{}", app.id));
+        for id in app_ids {
+            token_request.scope.push(format!("apps:{}", id));
         }
+
+        println!("token_request = {:?}", token_request);
         let request = self
             .post_with_token(token.secret(), "/users/restrict-token")
             .json(&token_request);
 
         let response = request.send().await?;
         let body = response.text().await.unwrap();
+        println!("{}", body);
         let token_response: RequestTokenResponse = serde_json::from_str(&body)?;
         Ok(token_response.access_token)
     }
@@ -150,6 +153,8 @@ pub struct App {
     pub name: String,
     access_keys: Vec<Key>,
 }
+
+
 #[derive(Clone, Deserialize, Serialize, Debug)]
 struct Key {
     name: String,

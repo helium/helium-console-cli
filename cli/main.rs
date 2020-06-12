@@ -3,7 +3,8 @@ use std::{process, str::FromStr};
 use structopt::StructOpt;
 use oauth2::{
     prelude::SecretNewType,
-    AuthorizationCode
+    AuthorizationCode,
+    AccessToken
 };
 
 pub type Result<T = ()> = std::result::Result<T, Box<dyn std::error::Error>>;
@@ -120,6 +121,29 @@ async fn run(cli: Cli) -> Result {
             TtnCmd::Import => {
                 ttn_import().await?;
             }
+            TtnCmd::GetAccountToken => {
+                let ttn_client = ttn::Client::new()?;
+                println!("Generate a ttnctl access code at https://account.thethingsnetwork.org/");
+                let access_code = AuthorizationCode::new(
+                    get_input("Provide a single use ttnctl access code")
+                );
+                println!("{}", ttn_client.get_account_token(access_code)?.secret());
+            }
+            TtnCmd::GetApps { token } => {
+                let ttn_client = ttn::Client::new()?;
+                let auth_token = AccessToken::new(token);
+                println!("{:#?}", ttn_client.get_apps(&auth_token).await?);
+            }
+            TtnCmd::TokenExchange { token, apps } => {
+                let mut ttn_client = ttn::Client::new()?;
+                let auth_token = AccessToken::new(token);
+                println!("auth_token: {}", auth_token.secret());
+                println!("making request");
+                let new_token = ttn_client
+                    .exchange_for_app_token(auth_token, apps.clone())
+                    .await?;
+                println!("{:#?}", new_token);
+            }
         },
     }
     Ok(())
@@ -166,7 +190,7 @@ async fn ttn_import() -> Result {
 
             // the account token is consumed
             token = ttn_client
-                .exchange_for_app_token(account_token, apps.clone())
+                .exchange_for_app_token(account_token, apps.clone().into_vec_string())
                 .await?;
             for app in &apps {
                 ttn_client.get_devices(&app, &token).await?;
@@ -177,7 +201,7 @@ async fn ttn_import() -> Result {
             let app = apps[index - 1].clone();
             // the account token is consumed
             token = ttn_client
-                .exchange_for_app_token(account_token, vec![app.clone()])
+                .exchange_for_app_token(account_token, vec![app.id.clone()])
                 .await?;
             devices.extend(ttn_client.get_devices(&app, &token).await?);
         }
@@ -393,5 +417,19 @@ fn get_number_from_user(mut answer: String) -> usize {
                 answer = get_input("Invalid number. Please enter a number");
             }
         }
+    }
+}
+
+pub trait IntoStringVec {
+    fn into_vec_string(self) -> Vec<String>;
+}
+
+impl IntoStringVec  for Vec<ttn::App> {
+    fn into_vec_string(self) -> Vec<String> {
+        let mut ret = Vec::new();
+        for el in self {
+            ret.push(el.id);
+        }
+        ret
     }
 }
