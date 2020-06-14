@@ -43,7 +43,6 @@ async fn auth(req: Request) -> Result<Response, Response> {
     }
 }
 
-
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let router = Router::build()
@@ -55,8 +54,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         })
         .finish()?;
 
-    let addr = "0.0.0.0:3003".parse()?;
-
+    let addr = "0.0.0.0:8080".parse()?;
     let server = hyper::Server::bind(&addr).serve(router);
 
     server.await?;
