@@ -476,10 +476,12 @@ version = "0.1.6"
 dependencies = [
  "base64 0.11.0",
  "hex",
+ "oauth2",
  "reqwest",
  "serde",
  "serde_derive",
  "serde_json",
+ "url 1.7.2",
  "uuid",
 ]
 
@@ -489,7 +491,6 @@ version = "0.1.8-alpha"
 dependencies = [
  "base64 0.11.0",
  "helium-console",
- "oauth2",
  "prettytable-rs",
  "reqwest",
  "serde",
@@ -498,7 +499,6 @@ dependencies = [
  "structopt",
  "tokio",
  "toml",
- "url 1.7.2",
 ]
 
 [[package]]

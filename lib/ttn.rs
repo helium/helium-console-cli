@@ -1,5 +1,5 @@
 use super::Result;
-use helium_console::NewDevice;
+use super::NewDevice;
 use oauth2::{
     basic::BasicClient,
     prelude::{NewType, SecretNewType},

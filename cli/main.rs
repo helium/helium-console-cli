@@ -8,7 +8,6 @@ const CONF_PATH: &str = ".helium-console-config.toml";
 
 mod clicmd;
 mod config;
-mod ttn;
 
 use clicmd::*;
 use config::get_input;
