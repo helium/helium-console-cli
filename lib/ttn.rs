@@ -4,6 +4,7 @@ use oauth2::{
     basic::BasicClient,
     prelude::{NewType, SecretNewType},
     AccessToken, AuthUrl, AuthorizationCode, ClientId, ClientSecret, TokenResponse, TokenUrl,
+    RequestTokenError
 };
 use reqwest::Client as ReqwestClient;
 use serde_derive::{Deserialize, Serialize};
@@ -50,8 +51,18 @@ impl Client {
             )?)),
         );
 
-        let token_res = client.exchange_code(access_code).unwrap();
-        Ok(token_res.access_token().clone())
+        match client.exchange_code(access_code) {
+            Ok(token_res) => Ok(token_res.access_token().clone()),
+            Err(e) => {
+                match e {
+                    RequestTokenError::ServerResponse(_) => {
+                        Err(Error::CodeNotFound.into())
+                    },
+                    _ => panic!("Unhandled Error {}", e)
+                }
+
+            }
+        }
     }
 
     fn get_with_token(&self, token: &str, path: &str) -> reqwest::RequestBuilder {
@@ -254,6 +265,7 @@ use std::{fmt, str};
 pub enum Error {
     NoHandler,
     DeviceNotFound,
+    CodeNotFound
 }
 
 impl fmt::Display for Error {
@@ -261,6 +273,8 @@ impl fmt::Display for Error {
         match self {
             Error::NoHandler => write!(f, "No handler servers are associated with App"),
             Error::DeviceNotFound => write!(f, "Device not found for delete"),
+            Error::CodeNotFound => write!(f, "Authorization code not found on TTN server"),
+
         }
     }
 }
@@ -270,6 +284,7 @@ impl stdError for Error {
         match self {
             Error::NoHandler => "No handler servers are associated with App",
             Error::DeviceNotFound => "Device not found for delete",
+            Error::CodeNotFound => "Authorization code not found on TTN server",
         }
     }
 
