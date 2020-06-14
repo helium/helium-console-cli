@@ -2,6 +2,10 @@ use reset_router::{Request, RequestExtensions, Response, Router};
 use helium_console::{oauth2, ttn};
 use oauth2::{prelude::SecretNewType, AuthorizationCode};
 use serde_derive::{Deserialize, Serialize};
+use std::{
+    env,
+    net::{IpAddr, Ipv4Addr, SocketAddr}
+};
 
 #[derive(Deserialize, Serialize, Debug)]
 pub struct AuthResponse {
@@ -45,6 +49,13 @@ async fn auth(req: Request) -> Result<Response, Response> {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+
+    // Get the port number to listen on.
+    let port = env::var("PORT")
+        .unwrap_or_else(|_| "3000".to_string())
+        .parse()
+        .expect("PORT must be a number");
+
     let router = Router::build()
         .add(http::Method::POST, r"^/access_code/([^/]+)$", auth)
         .add_not_found(|_| {
@@ -54,7 +65,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         })
         .finish()?;
 
-    let addr = "0.0.0.0:8080".parse()?;
+    let addr = SocketAddr::new(IpAddr::V4(Ipv4Addr::new(0, 0, 0, 0)), port);
     let server = hyper::Server::bind(&addr).serve(router);
 
     server.await?;
