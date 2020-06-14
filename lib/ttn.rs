@@ -95,17 +95,20 @@ impl Client {
         for id in app_ids {
             token_request.scope.push(format!("apps:{}", id));
         }
-
-        println!("token_request = {:?}", token_request);
         let request = self
             .post_with_token(token.secret(), "/users/restrict-token")
             .json(&token_request);
 
         let response = request.send().await?;
         let body = response.text().await.unwrap();
-        println!("{}", body);
-        let token_response: RequestTokenResponse = serde_json::from_str(&body)?;
-        Ok(token_response.access_token)
+
+        let token_response: core::result::Result<RequestTokenResponse, serde_json::error::Error> =
+            serde_json::from_str(&body);
+
+        match token_response {
+            Ok(token_response) => Ok(token_response.access_token),
+            Err(_) => Err(Error::TokenNotFoundOrExpired.into()),
+        }
     }
 
     pub async fn get_devices(&self, app: &App, token: &str) -> Result<Vec<TtnDevice>> {
@@ -265,7 +268,8 @@ use std::{fmt, str};
 pub enum Error {
     NoHandler,
     DeviceNotFound,
-    CodeNotFound
+    CodeNotFound,
+    TokenNotFoundOrExpired,
 }
 
 impl fmt::Display for Error {
@@ -274,6 +278,8 @@ impl fmt::Display for Error {
             Error::NoHandler => write!(f, "No handler servers are associated with App"),
             Error::DeviceNotFound => write!(f, "Device not found for delete"),
             Error::CodeNotFound => write!(f, "Authorization code not found on TTN server"),
+            Error::TokenNotFoundOrExpired => write!(f, "Token not found or expired"),
+
 
         }
     }
@@ -285,6 +291,8 @@ impl stdError for Error {
             Error::NoHandler => "No handler servers are associated with App",
             Error::DeviceNotFound => "Device not found for delete",
             Error::CodeNotFound => "Authorization code not found on TTN server",
+            Error::TokenNotFoundOrExpired => "Token not found or expired",
+
         }
     }
 

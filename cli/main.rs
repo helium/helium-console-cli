@@ -118,8 +118,6 @@ async fn run(cli: Cli) -> Result {
             }
             TtnCmd::GetAccountToken => {
                 let ttn_client = ttn::Client::new()?;
-
-                let ttn_client = ttn::Client::new()?;
                 println!("Generate a ttnctl access code at https://account.thethingsnetwork.org/");
                 let access_code =
                     AuthorizationCode::new(get_input("Provide a single use ttnctl access code"));
