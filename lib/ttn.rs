@@ -1,10 +1,10 @@
-use super::Result;
 use super::NewDevice;
+use super::Result;
 use oauth2::{
     basic::BasicClient,
     prelude::{NewType, SecretNewType},
-    AccessToken, AuthUrl, AuthorizationCode, ClientId, ClientSecret, TokenResponse, TokenUrl,
-    RequestTokenError
+    AccessToken, AuthUrl, AuthorizationCode, ClientId, ClientSecret, RequestTokenError,
+    TokenResponse, TokenUrl,
 };
 use reqwest::Client as ReqwestClient;
 use serde_derive::{Deserialize, Serialize};
@@ -53,15 +53,10 @@ impl Client {
 
         match client.exchange_code(access_code) {
             Ok(token_res) => Ok(token_res.access_token().clone()),
-            Err(e) => {
-                match e {
-                    RequestTokenError::ServerResponse(_) => {
-                        Err(Error::CodeNotFound.into())
-                    },
-                    _ => panic!("Unhandled Error {}", e)
-                }
-
-            }
+            Err(e) => match e {
+                RequestTokenError::ServerResponse(_) => Err(Error::CodeNotFound.into()),
+                _ => panic!("Unhandled Error {}", e),
+            },
         }
     }
 
@@ -279,8 +274,6 @@ impl fmt::Display for Error {
             Error::DeviceNotFound => write!(f, "Device not found for delete"),
             Error::CodeNotFound => write!(f, "Authorization code not found on TTN server"),
             Error::TokenNotFoundOrExpired => write!(f, "Token not found or expired"),
-
-
         }
     }
 }
@@ -292,7 +285,6 @@ impl stdError for Error {
             Error::DeviceNotFound => "Device not found for delete",
             Error::CodeNotFound => "Authorization code not found on TTN server",
             Error::TokenNotFoundOrExpired => "Token not found or expired",
-
         }
     }
 
