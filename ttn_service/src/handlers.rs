@@ -92,7 +92,7 @@ pub async fn exchange(req: Request) -> Result<Response, Response> {
 pub async fn devices(req: Request) -> Result<Response, Response> {
     #[derive(Deserialize, Debug)]
     pub struct Request {
-        account_token: String,
+        restricted_token: String,
         appid: String,
     }
     let (_parts, body) = req.into_parts();
@@ -101,7 +101,7 @@ pub async fn devices(req: Request) -> Result<Response, Response> {
     match request {
         Ok(request) => {
             let ttn_client = ttn::Client::new().unwrap();
-            let devices = match ttn_client.get_devices(&request.appid, request.account_token.as_str()).await {
+            let devices = match ttn_client.get_devices(&request.appid, request.restricted_token.as_str()).await {
                 Ok(devices) => devices,
                 Err(e) => {
                     return Ok(http::Response::builder()

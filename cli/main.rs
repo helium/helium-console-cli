@@ -185,8 +185,8 @@ async fn ttn_import() -> Result {
                 .exchange_for_app_token(account_token, apps.clone().into_vec_string())
                 .await?;
             for app in &apps {
-                ttn_client.get_devices(&app, &token).await?;
-                devices.extend(ttn_client.get_devices(&app, &token).await?);
+                ttn_client.get_devices(&app.id, &token).await?;
+                devices.extend(ttn_client.get_devices(&app.id, &token).await?);
             }
         // you can select one by one
         } else {
@@ -195,7 +195,7 @@ async fn ttn_import() -> Result {
             token = ttn_client
                 .exchange_for_app_token(account_token, vec![app.id.clone()])
                 .await?;
-            devices.extend(ttn_client.get_devices(&app, &token).await?);
+            devices.extend(ttn_client.get_devices(&app.id, &token).await?);
         }
 
         let config = config::load(CONF_PATH)?;
