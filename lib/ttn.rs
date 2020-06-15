@@ -95,23 +95,25 @@ impl Client {
             .json(&token_request);
 
         let response = request.send().await?;
-        let body = response.text().await.unwrap();
-
-        let token_response: core::result::Result<RequestTokenResponse, serde_json::error::Error> =
-            serde_json::from_str(&body);
-
-        match token_response {
-            Ok(token_response) => Ok(token_response.access_token),
-            Err(_) => Err(Error::TokenNotFoundOrExpired.into()),
+        if response.status() == 200 {
+            let body = response.text().await.unwrap();
+            let token_response: RequestTokenResponse =
+                serde_json::from_str(&body)?;
+            Ok(token_response.access_token)
+        } else {
+            let body = response.text().await.unwrap();
+            Err(body.into())
         }
+
+
     }
 
-    pub async fn get_devices(&self, app: &App, token: &str) -> Result<Vec<TtnDevice>> {
+    pub async fn get_devices(&self, app: &String, token: &str) -> Result<Vec<TtnDevice>> {
         // We brute force going through handler URLs
         for url in &APP_BASE_URL {
             let request = self
                 .client
-                .get(format!("{}/applications/{}/devices", url, app.id).as_str())
+                .get(format!("{}/applications/{}/devices", url, app).as_str())
                 .bearer_auth(token);
             let response = request.send().await?;
             // Response 200 means we got a hit
@@ -264,7 +266,6 @@ pub enum Error {
     NoHandler,
     DeviceNotFound,
     CodeNotFound,
-    TokenNotFoundOrExpired,
 }
 
 impl fmt::Display for Error {
@@ -273,7 +274,6 @@ impl fmt::Display for Error {
             Error::NoHandler => write!(f, "No handler servers are associated with App"),
             Error::DeviceNotFound => write!(f, "Device not found for delete"),
             Error::CodeNotFound => write!(f, "Authorization code not found on TTN server"),
-            Error::TokenNotFoundOrExpired => write!(f, "Token not found or expired"),
         }
     }
 }
@@ -284,7 +284,6 @@ impl stdError for Error {
             Error::NoHandler => "No handler servers are associated with App",
             Error::DeviceNotFound => "Device not found for delete",
             Error::CodeNotFound => "Authorization code not found on TTN server",
-            Error::TokenNotFoundOrExpired => "Token not found or expired",
         }
     }
 
