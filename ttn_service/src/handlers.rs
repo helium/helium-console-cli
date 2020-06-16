@@ -79,7 +79,7 @@ pub async fn exchange(req: Request) -> Result<Response, Response> {
                 .unwrap())
         }
         Err(e) => {
-            return Ok(http::Response::builder()
+            Ok(http::Response::builder()
                 .status(400)
                 .body(format!("{}", e).into())
                 .unwrap())
@@ -123,7 +123,7 @@ pub async fn devices(req: Request) -> Result<Response, Response> {
                 .unwrap())
         }
         Err(e) => {
-            return Ok(http::Response::builder()
+            Ok(http::Response::builder()
                 .status(400)
                 .body(format!("{}", e).into())
                 .unwrap())
