@@ -105,7 +105,7 @@ impl Client {
         }
     }
 
-    pub async fn get_devices(&self, app: &String, token: &str) -> Result<Vec<TtnDevice>> {
+    pub async fn get_devices(&self, app: &str, token: &str) -> Result<Vec<TtnDevice>> {
         // We brute force going through handler URLs
         for url in &APP_BASE_URL {
             let request = self
