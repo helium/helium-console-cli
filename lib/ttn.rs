@@ -97,15 +97,12 @@ impl Client {
         let response = request.send().await?;
         if response.status() == 200 {
             let body = response.text().await.unwrap();
-            let token_response: RequestTokenResponse =
-                serde_json::from_str(&body)?;
+            let token_response: RequestTokenResponse = serde_json::from_str(&body)?;
             Ok(token_response.access_token)
         } else {
             let body = response.text().await.unwrap();
             Err(body.into())
         }
-
-
     }
 
     pub async fn get_devices(&self, app: &String, token: &str) -> Result<Vec<TtnDevice>> {

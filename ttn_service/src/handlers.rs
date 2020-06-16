@@ -1,8 +1,7 @@
-use serde_derive::{Deserialize, Serialize};
 use helium_console::{oauth2, ttn};
 use oauth2::{prelude::SecretNewType, AccessToken, AuthorizationCode};
 use reset_router::{Request, RequestExtensions, Response};
-
+use serde_derive::{Deserialize, Serialize};
 
 pub async fn auth(req: Request) -> Result<Response, Response> {
     #[derive(Serialize, Debug)]
@@ -88,7 +87,6 @@ pub async fn exchange(req: Request) -> Result<Response, Response> {
     }
 }
 
-
 pub async fn devices(req: Request) -> Result<Response, Response> {
     #[derive(Deserialize, Debug)]
     pub struct Request {
@@ -101,7 +99,10 @@ pub async fn devices(req: Request) -> Result<Response, Response> {
     match request {
         Ok(request) => {
             let ttn_client = ttn::Client::new().unwrap();
-            let devices = match ttn_client.get_devices(&request.appid, request.restricted_token.as_str()).await {
+            let devices = match ttn_client
+                .get_devices(&request.appid, request.restricted_token.as_str())
+                .await
+            {
                 Ok(devices) => devices,
                 Err(e) => {
                     return Ok(http::Response::builder()
@@ -115,9 +116,7 @@ pub async fn devices(req: Request) -> Result<Response, Response> {
             pub struct Response {
                 devices: Vec<ttn::TtnDevice>,
             }
-            let response = Response {
-                devices,
-            };
+            let response = Response { devices };
             Ok(http::Response::builder()
                 .status(200)
                 .body(serde_json::to_string(&response).unwrap().into())
@@ -130,6 +129,4 @@ pub async fn devices(req: Request) -> Result<Response, Response> {
                 .unwrap())
         }
     }
-
-
 }

@@ -1,4 +1,3 @@
-
 use reset_router::{Response, Router};
 use std::{
     env,
@@ -6,7 +5,7 @@ use std::{
 };
 
 mod handlers;
-use handlers::{auth, exchange, devices};
+use handlers::{auth, devices, exchange};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -20,7 +19,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .add(http::Method::POST, r"^/access_code/([^/]+)$", auth)
         .add(http::Method::POST, r"^/exchange", exchange)
         .add(http::Method::GET, r"^/devices", devices)
-
         .add_not_found(|_| async {
             Ok::<_, Response>(
                 http::Response::builder()
