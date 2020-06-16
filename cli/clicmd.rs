@@ -66,14 +66,4 @@ pub enum TtnCmd {
     /// Imports devices from your TTN Account
     /// (requires ttnctl access code at https://account.thethingsnetwork.org/)
     Import,
-    /// Exchange OAuth access code for account token. Token may be scope to
-    /// have permissions on up to 10 appliccations
-    /// (requires ttnctl access code at https://account.thethingsnetwork.org/)
-    GetAccountToken,
-    /// Exchange OAuth access code for account token
-    /// (requires ttnctl access code at https://account.thethingsnetwork.org/)
-    GetApps { token: String },
-    /// Exchange OAuth access code for account token
-    /// (requires ttnctl access code at https://account.thethingsnetwork.org/)
-    TokenExchange { token: String, apps: Vec<String> },
 }

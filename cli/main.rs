@@ -1,4 +1,4 @@
-use oauth2::{prelude::SecretNewType, AccessToken, AuthorizationCode};
+use oauth2::{prelude::SecretNewType, AuthorizationCode};
 use prettytable::{cell, row, Table};
 use std::{process, str::FromStr};
 use structopt::StructOpt;
@@ -115,28 +115,6 @@ async fn run(cli: Cli) -> Result {
         Cli::Ttn { cmd } => match cmd {
             TtnCmd::Import => {
                 ttn_import().await?;
-            }
-            TtnCmd::GetAccountToken => {
-                let ttn_client = ttn::Client::new()?;
-                println!("Generate a ttnctl access code at https://account.thethingsnetwork.org/");
-                let access_code =
-                    AuthorizationCode::new(get_input("Provide a single use ttnctl access code"));
-                println!("{}", ttn_client.get_account_token(access_code)?.secret());
-            }
-            TtnCmd::GetApps { token } => {
-                let ttn_client = ttn::Client::new()?;
-                let auth_token = AccessToken::new(token);
-                println!("{:#?}", ttn_client.get_apps(&auth_token).await?);
-            }
-            TtnCmd::TokenExchange { token, apps } => {
-                let mut ttn_client = ttn::Client::new()?;
-                let auth_token = AccessToken::new(token);
-                println!("auth_token: {}", auth_token.secret());
-                println!("making request");
-                let new_token = ttn_client
-                    .exchange_for_app_token(auth_token, apps.clone())
-                    .await?;
-                println!("{:#?}", new_token);
             }
         },
     }
