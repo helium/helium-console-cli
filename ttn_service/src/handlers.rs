@@ -78,12 +78,10 @@ pub async fn exchange(req: Request) -> Result<Response, Response> {
                 .body(serde_json::to_string(&response).unwrap().into())
                 .unwrap())
         }
-        Err(e) => {
-            Ok(http::Response::builder()
-                .status(400)
-                .body(format!("{}", e).into())
-                .unwrap())
-        }
+        Err(e) => Ok(http::Response::builder()
+            .status(400)
+            .body(format!("{}", e).into())
+            .unwrap()),
     }
 }
 
@@ -122,11 +120,9 @@ pub async fn devices(req: Request) -> Result<Response, Response> {
                 .body(serde_json::to_string(&response).unwrap().into())
                 .unwrap())
         }
-        Err(e) => {
-            Ok(http::Response::builder()
-                .status(400)
-                .body(format!("{}", e).into())
-                .unwrap())
-        }
+        Err(e) => Ok(http::Response::builder()
+            .status(400)
+            .body(format!("{}", e).into())
+            .unwrap()),
     }
 }
