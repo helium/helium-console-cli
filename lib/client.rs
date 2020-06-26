@@ -37,8 +37,6 @@ pub struct Client {
 }
 
 impl Client {
-
-
     pub fn new(config: Config) -> Result<Client> {
         let timeout = config.request_timeout;
         let client = ReqwestClient::builder()
