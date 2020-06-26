@@ -1,0 +1,16 @@
+[package]
+name = "ttn_service"
+version = "0.1.0"
+authors = ["lthiery <me@louisthiery.com>"]
+edition = "2018"
+
+[dependencies]
+hyper = "0.13"
+reset-router = "0.8"
+tokio = { version = "0.2", features = ["full"] }
+http = "0.2"
+futures = "0.3"
+helium-console = { path = "../lib" }
+serde =  "1"
+serde_derive = "1"
+serde_json = "1"

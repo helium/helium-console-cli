@@ -3,6 +3,9 @@ use serde_derive::{Deserialize, Serialize};
 pub mod client;
 pub mod errors;
 pub use errors::*;
+pub mod ttn;
+
+pub use oauth2;
 
 pub type Result<T = ()> = std::result::Result<T, Box<dyn std::error::Error>>;
 

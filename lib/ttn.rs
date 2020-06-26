@@ -1,10 +1,10 @@
-use super::config::get_input;
+use super::NewDevice;
 use super::Result;
-use helium_console::NewDevice;
 use oauth2::{
     basic::BasicClient,
     prelude::{NewType, SecretNewType},
-    AccessToken, AuthUrl, AuthorizationCode, ClientId, ClientSecret, TokenResponse, TokenUrl,
+    AccessToken, AuthUrl, AuthorizationCode, ClientId, ClientSecret, RequestTokenError,
+    TokenResponse, TokenUrl,
 };
 use reqwest::Client as ReqwestClient;
 use serde_derive::{Deserialize, Serialize};
@@ -39,7 +39,7 @@ impl Client {
         })
     }
 
-    pub fn get_account_token(&self) -> Result<AccessToken> {
+    pub fn get_account_token(&self, access_code: AuthorizationCode) -> Result<AccessToken> {
         let client = BasicClient::new(
             ClientId::new("ttnctl".to_string()),
             Some(ClientSecret::new("ttnctl".to_string())),
@@ -50,10 +50,14 @@ impl Client {
                 format!("{}/users/token", ACCOUNT_BASE_URL).as_str(),
             )?)),
         );
-        let access_code = get_input("Provide a single use ttnctl access code");
-        let code = AuthorizationCode::new(access_code);
-        let token_res = client.exchange_code(code).unwrap();
-        Ok(token_res.access_token().clone())
+
+        match client.exchange_code(access_code) {
+            Ok(token_res) => Ok(token_res.access_token().clone()),
+            Err(e) => match e {
+                RequestTokenError::ServerResponse(_) => Err(Error::CodeNotFound.into()),
+                _ => panic!("Unhandled Error {}", e),
+            },
+        }
     }
 
     fn get_with_token(&self, token: &str, path: &str) -> reqwest::RequestBuilder {
@@ -79,29 +83,34 @@ impl Client {
     pub async fn exchange_for_app_token(
         &mut self,
         token: AccessToken,
-        apps: Vec<App>,
+        app_ids: Vec<String>,
     ) -> Result<String> {
         let mut token_request = RequestToken { scope: Vec::new() };
 
-        for app in apps {
-            token_request.scope.push(format!("apps:{}", app.id));
+        for id in app_ids {
+            token_request.scope.push(format!("apps:{}", id));
         }
         let request = self
             .post_with_token(token.secret(), "/users/restrict-token")
             .json(&token_request);
 
         let response = request.send().await?;
-        let body = response.text().await.unwrap();
-        let token_response: RequestTokenResponse = serde_json::from_str(&body)?;
-        Ok(token_response.access_token)
+        if response.status() == 200 {
+            let body = response.text().await.unwrap();
+            let token_response: RequestTokenResponse = serde_json::from_str(&body)?;
+            Ok(token_response.access_token)
+        } else {
+            let body = response.text().await.unwrap();
+            Err(body.into())
+        }
     }
 
-    pub async fn get_devices(&self, app: &App, token: &str) -> Result<Vec<TtnDevice>> {
+    pub async fn get_devices(&self, app: &str, token: &str) -> Result<Vec<TtnDevice>> {
         // We brute force going through handler URLs
         for url in &APP_BASE_URL {
             let request = self
                 .client
-                .get(format!("{}/applications/{}/devices", url, app.id).as_str())
+                .get(format!("{}/applications/{}/devices", url, app).as_str())
                 .bearer_auth(token);
             let response = request.send().await?;
             // Response 200 means we got a hit
@@ -152,6 +161,7 @@ pub struct App {
     pub name: String,
     access_keys: Vec<Key>,
 }
+
 #[derive(Clone, Deserialize, Serialize, Debug)]
 struct Key {
     name: String,
@@ -252,6 +262,7 @@ use std::{fmt, str};
 pub enum Error {
     NoHandler,
     DeviceNotFound,
+    CodeNotFound,
 }
 
 impl fmt::Display for Error {
@@ -259,6 +270,7 @@ impl fmt::Display for Error {
         match self {
             Error::NoHandler => write!(f, "No handler servers are associated with App"),
             Error::DeviceNotFound => write!(f, "Device not found for delete"),
+            Error::CodeNotFound => write!(f, "Authorization code not found on TTN server"),
         }
     }
 }
@@ -268,6 +280,7 @@ impl stdError for Error {
         match self {
             Error::NoHandler => "No handler servers are associated with App",
             Error::DeviceNotFound => "Device not found for delete",
+            Error::CodeNotFound => "Authorization code not found on TTN server",
         }
     }
 

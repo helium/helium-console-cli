@@ -1,3 +1,4 @@
+use oauth2::{prelude::SecretNewType, AuthorizationCode};
 use prettytable::{cell, row, Table};
 use std::{process, str::FromStr};
 use structopt::StructOpt;
@@ -7,7 +8,6 @@ const CONF_PATH: &str = ".helium-console-config.toml";
 
 mod clicmd;
 mod config;
-mod ttn;
 
 use clicmd::*;
 use config::get_input;
@@ -125,7 +125,8 @@ async fn ttn_import() -> Result {
     println!("Generate a ttnctl access code at https://account.thethingsnetwork.org/");
     let mut ttn_client = ttn::Client::new()?;
 
-    let account_token = ttn_client.get_account_token()?;
+    let access_code = AuthorizationCode::new(get_input("Provide a single use ttnctl access code"));
+    let account_token = ttn_client.get_account_token(access_code)?;
 
     let apps = ttn_client.get_apps(&account_token).await?;
 
@@ -159,20 +160,20 @@ async fn ttn_import() -> Result {
 
             // the account token is consumed
             token = ttn_client
-                .exchange_for_app_token(account_token, apps.clone())
+                .exchange_for_app_token(account_token, apps.clone().into_vec_string())
                 .await?;
             for app in &apps {
-                ttn_client.get_devices(&app, &token).await?;
-                devices.extend(ttn_client.get_devices(&app, &token).await?);
+                ttn_client.get_devices(&app.id, &token).await?;
+                devices.extend(ttn_client.get_devices(&app.id, &token).await?);
             }
         // you can select one by one
         } else {
             let app = apps[index - 1].clone();
             // the account token is consumed
             token = ttn_client
-                .exchange_for_app_token(account_token, vec![app.clone()])
+                .exchange_for_app_token(account_token, vec![app.id.clone()])
                 .await?;
-            devices.extend(ttn_client.get_devices(&app, &token).await?);
+            devices.extend(ttn_client.get_devices(&app.id, &token).await?);
         }
 
         let config = config::load(CONF_PATH)?;
@@ -386,5 +387,19 @@ fn get_number_from_user(mut answer: String) -> usize {
                 answer = get_input("Invalid number. Please enter a number");
             }
         }
+    }
+}
+
+pub trait IntoStringVec {
+    fn into_vec_string(self) -> Vec<String>;
+}
+
+impl IntoStringVec for Vec<ttn::App> {
+    fn into_vec_string(self) -> Vec<String> {
+        let mut ret = Vec::new();
+        for el in self {
+            ret.push(el.id);
+        }
+        ret
     }
 }
