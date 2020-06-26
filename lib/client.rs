@@ -35,6 +35,11 @@ pub struct Client {
 impl Client {
     /// Create client from configuration HashMap
     pub fn new(config: Config) -> Result<Client> {
+        Self::new_with_url(config,DEFAULT_BASE_URL )
+    }
+
+    /// Create client from configuration HashMap
+    pub fn new_with_url(config: Config, base_url: &str) -> Result<Client> {
         let timeout = config.request_timeout;
         let client = ReqwestClient::builder()
             .timeout(Duration::from_secs(timeout))
@@ -48,7 +53,7 @@ impl Client {
         }
 
         Ok(Client {
-            base_url: config.base_url.clone(),
+            base_url: base_url.to_string(),
             key: config.key,
             client,
             labels: HashMap::new(),
