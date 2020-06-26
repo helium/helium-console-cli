@@ -33,12 +33,10 @@ pub struct Client {
 }
 
 impl Client {
-    /// Create client from configuration HashMap
     pub fn new(config: Config) -> Result<Client> {
         Self::new_with_url(config,DEFAULT_BASE_URL )
     }
 
-    /// Create client from configuration HashMap
     pub fn new_with_url(config: Config, base_url: &str) -> Result<Client> {
         let timeout = config.request_timeout;
         let client = ReqwestClient::builder()
