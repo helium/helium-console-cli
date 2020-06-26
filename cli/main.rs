@@ -73,6 +73,14 @@ async fn run(cli: Cli) -> Result {
                     let new_device = NewDevice::from_user_input(app_eui, app_key, dev_eui, name)?;
                     println!("{:#?}", client.post_device(&new_device).await?);
                 }
+                DeviceCmd::CreateByAppEui { app_eui, mut name } => {
+                    let app_key = Device::random_app_key();
+                    let dev_eui = Device::random_dev_eui();
+                    name.push('_');
+                    name.push_str(&dev_eui[11..].to_uppercase());
+                    let new_device = NewDevice::from_user_input(app_eui, app_key, dev_eui, name)?;
+                    println!("{:#?}", client.post_device(&new_device).await?);
+                }
                 DeviceCmd::Delete {
                     app_eui,
                     app_key,
