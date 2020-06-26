@@ -1,6 +1,6 @@
 [package]
 name = "helium-console"
-version = "0.1.7"
+version = "0.1.8"
 authors = ["Louis Thiery <louis@helium.com>"]
 edition = "2018"
 
@@ -17,3 +17,4 @@ base64 = "0.11"
 uuid = "0.8"
 oauth2 = "2.0"
 url = "^1.7.2"
+rand = "0.7.3"

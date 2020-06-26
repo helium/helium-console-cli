@@ -1,3 +1,4 @@
+use rand::Rng;
 use serde_derive::{Deserialize, Serialize};
 
 pub mod client;
@@ -35,6 +36,24 @@ impl Device {
 
     pub fn app_key(&self) -> &String {
         &self.app_key
+    }
+
+    pub fn random_dev_eui() -> String {
+        let mut rng = rand::thread_rng();
+        let mut deveui_bytes = Vec::new();
+        for _ in 0..8 {
+            deveui_bytes.push(rng.gen())
+        }
+        hex::encode(deveui_bytes)
+    }
+
+    pub fn random_app_key() -> String {
+        let mut rng = rand::thread_rng();
+        let mut app_key_bytes = Vec::new();
+        for _ in 0..16 {
+            app_key_bytes.push(rng.gen())
+        }
+        hex::encode(app_key_bytes)
     }
 }
 

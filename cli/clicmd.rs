@@ -36,6 +36,13 @@ pub enum DeviceCmd {
         dev_eui: String,
         name: String,
     },
+    /// Create a device by app_eui and name prefix
+    /// DevEui & AppKey are randomly generated
+    /// Last four characters of DevEui are appended
+    CreateByAppEui {
+        app_eui: String,
+        name: String,
+    },
     // Add a label to the device
     // by providing device_uuid and label_uuid
     AddLabel {

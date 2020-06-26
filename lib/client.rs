@@ -15,9 +15,13 @@ const DEFAULT_TIMEOUT: u64 = 120;
 
 impl Config {
     pub fn new(key: String) -> Config {
+        Self::new_with_url(key, DEFAULT_BASE_URL)
+    }
+
+    pub fn new_with_url(key: String, url: &str) -> Config {
         Config {
             key,
-            base_url: DEFAULT_BASE_URL.to_string(),
+            base_url: url.to_string(),
             request_timeout: DEFAULT_TIMEOUT,
         }
     }
@@ -33,7 +37,6 @@ pub struct Client {
 }
 
 impl Client {
-    /// Create client from configuration HashMap
     pub fn new(config: Config) -> Result<Client> {
         let timeout = config.request_timeout;
         let client = ReqwestClient::builder()
@@ -48,7 +51,7 @@ impl Client {
         }
 
         Ok(Client {
-            base_url: config.base_url.clone(),
+            base_url: config.base_url,
             key: config.key,
             client,
             labels: HashMap::new(),

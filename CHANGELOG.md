@@ -18,6 +18,10 @@ Bug fixes:
 * [Link to github PR]():
   A bugfix.
 -->
+0.1.8 (2020-06-26)
+==================
+* Allow creation of devices with random AppKey and DevEui
+
 0.1.7 (2020-06-02)
 ==================
 * Allow for deletion of devices on TTN backend upon import
