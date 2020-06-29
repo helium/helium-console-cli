@@ -1,1 +1,1 @@
-web: ./target/release/ttn_service
+web: ./target/release/ttn-service

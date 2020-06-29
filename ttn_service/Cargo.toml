@@ -1,5 +1,5 @@
 [package]
-name = "ttn_service"
+name = "ttn-service"
 version = "0.1.0"
 authors = ["lthiery <me@louisthiery.com>"]
 edition = "2018"

@@ -1,2 +1,2 @@
-RUST_CARGO_BUILD_FLAGS="--release --bin ttn_service"
+RUST_CARGO_BUILD_FLAGS="--release --bin ttn-service"
 
