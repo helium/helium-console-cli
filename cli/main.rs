@@ -1,5 +1,6 @@
 use oauth2::{prelude::SecretNewType, AuthorizationCode};
 use prettytable::{cell, row, Table};
+use serde_derive::{Deserialize, Serialize};
 use std::{process, str::FromStr};
 use structopt::StructOpt;
 
@@ -51,7 +52,31 @@ async fn run(cli: Cli) -> Result {
             let client = client::Client::new(config)?;
 
             match cmd {
-                DeviceCmd::List => println!("{:#?}", client.get_devices().await?),
+                DeviceCmd::List { oneline } => {
+                    #[derive(Deserialize, Serialize)]
+                    struct Output {
+                        devices: Vec<Device>,
+                    }
+                    let output = Output {
+                        devices: client.get_devices().await?,
+                    };
+                    if oneline {
+                        println!("{}", serde_json::to_string(&output)?);
+                    } else {
+                        println!("{{ \"devices\":");
+                        println!("[");
+                        let len = output.devices.len();
+                        for (index, device) in output.devices.iter().enumerate() {
+                            if index + 1 != len {
+                                println!("{},", serde_json::to_string(&device)?);
+                            } else {
+                                println!("{}", serde_json::to_string(&device)?);
+                            }
+                        }
+                        println!("]");
+                        println!("}}");
+                    }
+                }
                 DeviceCmd::Get {
                     app_eui,
                     app_key,
