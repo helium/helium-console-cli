@@ -3,7 +3,10 @@ use structopt::StructOpt;
 #[derive(StructOpt, Debug)]
 pub enum DeviceCmd {
     /// List all your organization's devices
-    List,
+    List {
+        #[structopt(short, long)]
+        oneline: bool,
+    },
     /// Get the full record of your device
     /// by providing app_eui, app_key, and dev_eui
     Get {

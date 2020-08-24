@@ -10,7 +10,7 @@ pub use oauth2;
 
 pub type Result<T = ()> = std::result::Result<T, Box<dyn std::error::Error>>;
 
-#[derive(Clone, Deserialize, Debug)]
+#[derive(Clone, Deserialize, Serialize, Debug)]
 pub struct Device {
     app_eui: String,
     app_key: String,
