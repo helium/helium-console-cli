@@ -11,4 +11,4 @@ When installer is complete, select C++ Build Tools from the tile menu, use defau
 
 ## How to use
 
-Docs for users of the Console CLI are available [here](https://developer.helium.com/console/cli)
+Docs for users of the Console CLI are available [here](https://docs.helium.com/use-the-network/console/cli/)
