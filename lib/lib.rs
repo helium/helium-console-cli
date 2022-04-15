@@ -204,3 +204,26 @@ pub fn validate_uuid_input(id: &str) -> Result {
     }
     Ok(())
 }
+
+#[derive(Clone, Deserialize, Serialize, Debug)]
+pub struct DetailedDevice {
+    app_eui: String,
+    app_key: String,
+    dev_eui: String,
+    id: String,
+    name: String,
+    organization_id: String,
+    oui: usize,
+
+    // Extended set beyond fields in `Device`
+    active: bool,
+    adr_allowed: serde_json::Value,
+    cf_list_enabled: serde_json::Value,
+    config_profile_id: serde_json::Value,
+    dc_usage: usize,
+    in_xor_filter: bool,
+    labels: Vec<String>,
+    last_connected: serde_json::Value,
+    rx_delay: u8,
+    total_packets: usize,
+}

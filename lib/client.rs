@@ -79,6 +79,22 @@ impl Client {
             .header("key", self.key.as_str()))
     }
 
+    pub async fn get_detailed_devices(&self) -> Result<Vec<DetailedDevice>> {
+        let request = self.get("api/v1/devices")?;
+        let response = request.send().await?;
+        if response.status() == 200 {
+            let body = response.text().await.unwrap();
+            let devices: Vec<DetailedDevice> = serde_json::from_str(&body)?;
+            Ok(devices)
+        } else if response.status() == 401 {
+            let body = response.text().await.unwrap();
+            println!("{}", body);
+            Err(Error::UnauthorizedApi.into())
+        } else {
+            Err(Error::HttpErrorApi.into())
+        }
+    }
+
     pub async fn get_devices(&self) -> Result<Vec<Device>> {
         let request = self.get("api/v1/devices")?;
         let response = request.send().await?;

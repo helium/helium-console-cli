@@ -22,6 +22,11 @@ pub enum Cli {
         #[structopt(subcommand)]
         cmd: DeviceCmd,
     },
+    /// Detailed status of all devices; e.g., in_xor_filter
+    Devices {
+        #[structopt(subcommand)]
+        cmd: DevicesCmd,
+    },
     /// List, create, and delete labels
     Label {
         #[structopt(subcommand)]
@@ -126,6 +131,31 @@ async fn run(cli: Cli) -> Result {
                 DeviceCmd::RemoveLabel { device, label } => {
                     let device_label = DeviceLabel::from_uuid(label)?;
                     client.remove_device_label(device, &device_label).await?;
+                }
+            }
+        }
+        Cli::Devices { cmd } => {
+            let config = config::load(CONF_PATH)?;
+            let client = client::Client::new(config)?;
+            match cmd {
+                DevicesCmd::All => {
+                    #[derive(Deserialize, Serialize)]
+                    struct Output {
+                        devices: Vec<DetailedDevice>,
+                    }
+                    let output = Output {
+                        devices: client.get_detailed_devices().await?,
+                    };
+                    println!("[");
+                    let len = output.devices.len();
+                    for (index, device) in output.devices.iter().enumerate() {
+                        if index + 1 != len {
+                            println!("{},", serde_json::to_string(&device)?);
+                        } else {
+                            println!("{}", serde_json::to_string(&device)?);
+                        }
+                    }
+                    println!("]");
                 }
             }
         }
