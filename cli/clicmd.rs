@@ -61,6 +61,13 @@ pub enum DeviceCmd {
 }
 
 #[derive(StructOpt, Debug)]
+pub enum DevicesCmd {
+    // No arguments required, but added for consistency
+    // and to disambiguate from `help`
+    All,
+}
+
+#[derive(StructOpt, Debug)]
 pub enum LabelCmd {
     /// List all your organization's labels
     List,

@@ -73,7 +73,7 @@ impl Client {
     }
 
     pub async fn get_apps(&self, token: &AccessToken) -> Result<Vec<App>> {
-        let request = self.get_with_token(&token.secret(), "/api/v2/applications");
+        let request = self.get_with_token(token.secret(), "/api/v2/applications");
         let response = request.send().await?;
         let body = response.text().await.unwrap();
         let apps: Vec<App> = serde_json::from_str(&body)?;
