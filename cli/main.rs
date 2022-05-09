@@ -1,7 +1,7 @@
 use oauth2::{prelude::SecretNewType, AuthorizationCode};
 use prettytable::{cell, row, Table};
 use serde_derive::{Deserialize, Serialize};
-use std::{process, str::FromStr};
+use std::{io::{self, Write}, process, str::FromStr};
 use structopt::StructOpt;
 
 pub type Result<T = ()> = std::result::Result<T, Box<dyn std::error::Error>>;
@@ -68,18 +68,22 @@ async fn run(cli: Cli) -> Result {
                     if oneline {
                         println!("{}", serde_json::to_string(&output)?);
                     } else {
-                        println!("{{ \"devices\":");
-                        println!("[");
+                        let stdout = io::stdout();
+                        let mut handle = stdout.lock();
+                        handle.write_all(b"{ \"devices\":\n")?;
+                        handle.write_all(b"[\n")?;
                         let len = output.devices.len();
                         for (index, device) in output.devices.iter().enumerate() {
+                            // Avoid .to_vec_pretty() so interior can be sorted later
+                            handle.write_all(&serde_json::to_vec(&device)?)?;
                             if index + 1 != len {
-                                println!("{},", serde_json::to_string(&device)?);
+                                handle.write_all(b",\n")?;
                             } else {
-                                println!("{}", serde_json::to_string(&device)?);
+                                handle.write_all(b"\n")?;
                             }
                         }
-                        println!("]");
-                        println!("}}");
+                        handle.write_all(b"]\n")?;
+                        handle.write_all(b"}\n")?;
                     }
                 }
                 DeviceCmd::Get {
@@ -146,16 +150,19 @@ async fn run(cli: Cli) -> Result {
                     let output = Output {
                         devices: client.get_detailed_devices().await?,
                     };
-                    println!("[");
+                    let stdout = io::stdout();
+                    let mut handle = stdout.lock();
+                    handle.write_all(b"[\n")?;
                     let len = output.devices.len();
                     for (index, device) in output.devices.iter().enumerate() {
+                        handle.write_all(&serde_json::to_vec_pretty(&device)?)?;
                         if index + 1 != len {
-                            println!("{},", serde_json::to_string(&device)?);
+                            handle.write_all(b",\n")?;
                         } else {
-                            println!("{}", serde_json::to_string(&device)?);
+                            handle.write_all(b"\n")?;
                         }
                     }
-                    println!("]");
+                    handle.write_all(b"]\n")?;
                 }
             }
         }
