@@ -11,7 +11,7 @@ path = "main.rs"
 
 [dependencies]
 structopt = { version = "0", default-features = false }
-reqwest = { version = "0", features = ["json"] }
+reqwest = { version = "0.11", features = ["json"] }
 tokio = { version = "1", features = ["full"] }
 serde =  "1"
 serde_derive = "1"
