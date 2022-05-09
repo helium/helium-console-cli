@@ -8,13 +8,13 @@ edition = "2018"
 path = "lib.rs"
 
 [dependencies]
-reqwest = { version = "0.10", features = ["json"] }
+reqwest = { version = "0", features = ["json"] }
 serde =  "1"
 serde_derive = "1"
 serde_json = "1"
-hex = "0.4"
-base64 = "0.11"
-uuid = "0.8"
-oauth2 = "2.0"
+hex = "0"
+base64 = "0"
+uuid = "0"
+oauth2 = "2"
 url = "^1.7.2"
-rand = "0.7.3"
+rand = "0"
